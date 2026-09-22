@@ -1,0 +1,22 @@
+{
+  "seasons": [
+    {"season_number": 1, "name": "Sezon 1", "episode_count": "2", "cover": "", "air_date": "2025-01-01"},
+    {"season_number": "2", "name": "Sezon 2", "episode_count": 1}
+  ],
+  "info": {
+    "name": "Uydurma Dizi",
+    "series_id": 301,
+    "genre": "Dram",
+    "rating": "8.1",
+    "backdrop_path": []
+  },
+  "episodes": {
+    "2": [
+      {"id": "5003", "episode_num": 1, "title": "S2 B1", "container_extension": "mp4", "season": 2, "info": []}
+    ],
+    "1": [
+      {"id": "5002", "episode_num": "2", "title": "S1 B2", "container_extension": "mkv", "season": "1", "info": {"duration_secs": "2700", "plot": "İkinci bölüm."}},
+      {"id": 5001, "episode_num": 1, "title": "S1 B1", "container_extension": "mp4", "season": 1, "info": {"duration_secs": 2640, "duration": "00:44:00", "rating": ""}}
+    ]
+  }
+}

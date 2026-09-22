@@ -1,0 +1,30 @@
+{
+  "epg_listings": [
+    {
+      "id": "9001",
+      "epg_id": "12",
+      "title": "QWvFn2FtIELDvGx0ZW5p",
+      "lang": "tr",
+      "start": "2026-09-22 21:00:00",
+      "end": "2026-09-22 22:00:00",
+      "description": "R8O8bsO8biDDtnpldGkgdmUgaGF2YSBkdXJ1bXUu",
+      "channel_id": "ornek.haber",
+      "start_timestamp": "1790100000",
+      "stop_timestamp": "1790103600",
+      "now_playing": 1,
+      "has_archive": "0"
+    },
+    {
+      "id": "9002",
+      "epg_id": "12",
+      "title": "R2VjZSBLdcWfYcSfxLE",
+      "lang": "tr",
+      "start": "2026-09-22 19:00:00",
+      "end": "2026-09-22 20:30:00",
+      "description": "",
+      "channel_id": "ornek.haber",
+      "now_playing": 0,
+      "has_archive": 0
+    }
+  ]
+}

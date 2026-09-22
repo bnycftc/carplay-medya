@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tv SYSTEM "xmltv.dtd">
+<tv generator-info-name="fixture">
+  <channel id="ornek.haber">
+    <display-name lang="tr">Örnek Haber</display-name>
+    <display-name lang="en">Sample News</display-name>
+    <icon src="http://img.example.com/logos/ornek-haber.png"/>
+  </channel>
+  <channel id="Demo.Spor">
+    <display-name>Demo Spor</display-name>
+  </channel>
+  <programme start="20260922180000 +0300" stop="20260922190000 +0300" channel="ornek.haber">
+    <title lang="tr">Akşam Bülteni</title>
+    <title lang="en">Evening Bulletin</title>
+    <sub-title>Bölüm 12</sub-title>
+    <desc lang="tr">Günün özeti &amp; hava durumu.</desc>
+    <category>Haber</category>
+    <category>Güncel</category>
+    <episode-num system="xmltv_ns">0.11.</episode-num>
+    <episode-num system="onscreen">S01E12</episode-num>
+    <icon src="http://img.example.com/epg/aksam.png"/>
+  </programme>
+  <programme start="20260922190000 +0300" stop="20260922203000 +0300" channel="ornek.haber">
+    <title><![CDATA[Gece Kuşağı]]></title>
+  </programme>
+  <programme start="20260922203000 +0300" channel="ornek.haber">
+    <title>Son Program</title>
+  </programme>
+  <programme start="20260922150000" stop="20260922170000" channel="Demo.Spor">
+    <title>Maç Özeti</title>
+  </programme>
+  <programme start="not-a-date" stop="20260922170000" channel="Demo.Spor">
+    <title>Bozuk Tarih</title>
+  </programme>
+  <programme start="20260922150000 +0000" stop="20260922160000 +0000">
+    <title>Kanalsız</title>
+  </programme>
+</tv>

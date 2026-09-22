@@ -1,0 +1,25 @@
+{
+  "user_info": {
+    "username": "demo",
+    "password": "s3cret+pass",
+    "message": "Welcome",
+    "auth": 1,
+    "status": "Active",
+    "exp_date": "1798761600",
+    "is_trial": "0",
+    "active_cons": "1",
+    "created_at": "1767225600",
+    "max_connections": "2",
+    "allowed_output_formats": ["m3u8", "ts"]
+  },
+  "server_info": {
+    "url": "iptv.example.com",
+    "port": "8080",
+    "https_port": "8443",
+    "server_protocol": "http",
+    "rtmp_port": "",
+    "timezone": "Europe/Istanbul",
+    "timestamp_now": 1790100000,
+    "time_now": "2026-09-22 21:00:00"
+  }
+}

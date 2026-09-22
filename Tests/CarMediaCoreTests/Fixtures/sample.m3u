@@ -1,0 +1,29 @@
+#EXTM3U url-tvg="http://epg.example.com/guide.xml,http://epg.example.com/backup.xml" x-tvg-url="http://epg.example.com/guide.xml" catchup="default"
+# Fictional test playlist. All hosts are example.com; no real channels.
+
+#EXTINF:-1 tvg-id="ornek.haber" tvg-name="Örnek Haber" tvg-logo="http://img.example.com/logos/ornek haber.png" group-title="Haber" tvg-chno="7" tvg-language="Turkish" tvg-country="TR" catchup="append" catchup-source="?utc={utc}&lutc={lutc}",Örnek Haber HD
+http://stream.example.com/live/ornek-haber/index.m3u8
+
+#EXTINF:-1 tvg-id="demo.spor" group-title="Spor",Demo Spor, Canlı
+#EXTVLCOPT:http-user-agent=DemoPlayer/2.0 (Test)
+#EXTVLCOPT:http-referrer=http://portal.example.com/
+http://stream.example.com/live/demo-spor.m3u8
+
+#EXTINF:0 tvg-id=kurmaca.muzik group-title=Müzik tvg-logo=http://img.example.com/muzik.png,Kurmaca Müzik
+#KODIPROP:inputstream.adaptive.manifest_type=hls
+#KODIPROP:inputstream=inputstream.adaptive
+http://stream.example.com/live/kurmaca muzik/playlist.m3u8
+
+#EXTINF:-1 tvg-id="test.radyo" tvg-name="Test Radyo" radio="true" group-title="Radyo"
+http://radio.example.com/test-radyo.mp3
+
+#EXTGRP:Belgesel
+#EXTINF:-1 tvg-id="hayali.belgesel",Hayali Belgesel
+http://stream.example.com/live/hayali-belgesel.m3u8|User-Agent=KodiLike/1.0&Referer=http://ref.example.com/
+
+#EXTINF:-1,Grupsuz Kanal
+http://stream.example.com/live/grupsuz.ts
+
+#EXT-X-SESSION-DATA:DATA-ID="com.example.note",VALUE="ignored"
+#EXTINF:7200 tvg-id="" group-title="Filmler",Kurgu Film (2024)
+http://vod.example.com/movie/demo/secret/1001.mp4

@@ -1,0 +1,28 @@
+[
+  {
+    "num": 1,
+    "name": "Uydurma Dizi",
+    "series_id": "301",
+    "cover": "http://img.example.com/series/uydurma.jpg",
+    "plot": "Tamamen hayali bir dizi.",
+    "cast": "Oyuncu A, Oyuncu B",
+    "director": "Yönetmen C",
+    "genre": "Dram",
+    "releaseDate": "2025-01-01",
+    "last_modified": "1767225600",
+    "rating": "8",
+    "rating_5based": "4",
+    "backdrop_path": ["http://img.example.com/series/uydurma-bg.jpg"],
+    "youtube_trailer": "",
+    "episode_run_time": "45",
+    "category_id": "20"
+  },
+  {
+    "num": 2,
+    "name": "Deneme Dizisi",
+    "series_id": 302,
+    "backdrop_path": "",
+    "rating": null,
+    "category_id": 21
+  }
+]

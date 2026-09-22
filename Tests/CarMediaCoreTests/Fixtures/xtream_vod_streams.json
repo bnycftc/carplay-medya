@@ -1,0 +1,26 @@
+[
+  {
+    "num": 1,
+    "name": "Kurgu Film",
+    "stream_type": "movie",
+    "stream_id": "2001",
+    "stream_icon": "http://img.example.com/vod/kurgu.jpg",
+    "rating": "7.4",
+    "rating_5based": 3.7,
+    "added": "1767225600",
+    "category_id": "10",
+    "container_extension": "mp4",
+    "custom_sid": null,
+    "direct_source": ""
+  },
+  {
+    "num": 2,
+    "name": "Hayali Belgesel",
+    "stream_type": "movie",
+    "stream_id": 2002,
+    "rating": "",
+    "rating_5based": "0",
+    "category_id": "11",
+    "container_extension": "mkv"
+  }
+]
