@@ -7,3 +7,7 @@ DerivedData/
 .DS_Store
 # SwiftPM on Windows writes the test resource bundle's Info.plist to the package root
 /Info.plist
+# XcodeGen output (regenerate with: cd App && xcodegen generate)
+App/*.xcodeproj
+App/.build
+build/

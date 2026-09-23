@@ -1,0 +1,70 @@
+name: App
+
+# iOS app build. There is no Mac in the main dev setup, so this workflow is where the iOS code is
+# compiled: it generates App/CarMedya.xcodeproj with XcodeGen and builds for the iOS Simulator
+# without code signing (CarPlay entitlements are requested from Apple, not granted yet).
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+
+jobs:
+  ios:
+    name: iOS app (Simulator, unsigned)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen and xcbeautify
+        run: |
+          brew install xcodegen
+          brew install xcbeautify || echo "xcbeautify unavailable; plain xcodebuild output will be used"
+
+      - name: Package tests (CarMediaCore + CarMediaKit)
+        run: swift test
+
+      - name: Generate Xcode project
+        working-directory: App
+        run: xcodegen generate
+
+      - name: Build for iOS Simulator
+        run: |
+          set -o pipefail
+          build() {
+            xcodebuild \
+              -project App/CarMedya.xcodeproj \
+              -scheme CarMedya \
+              -destination 'generic/platform=iOS Simulator' \
+              -configuration Debug \
+              -derivedDataPath build/DerivedData \
+              CODE_SIGNING_ALLOWED=NO \
+              build 2>&1 | tee build/xcodebuild.log
+          }
+          mkdir -p build
+          if command -v xcbeautify >/dev/null 2>&1; then
+            build | xcbeautify
+          else
+            build
+          fi
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: build/xcodebuild.log
+          if-no-files-found: ignore

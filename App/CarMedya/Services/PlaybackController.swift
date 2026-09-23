@@ -1,0 +1,328 @@
+import AVFoundation
+import CarMediaCore
+import CarMediaKit
+import Combine
+import os
+import UIKit
+
+/// The single player of the app, shared by the phone UI, lock screen and CarPlay.
+///
+/// - Audio session: `.playback` / `.longFormAudio`, active **only while playing** so the car's own
+///   sources are not interrupted when nothing plays (plan §5, App Review 2.5.4).
+/// - Errors are classified with ``UserFacingError`` and details redacted with the Xtream password.
+/// - Lock screen / CarPlay Now Playing goes through ``NowPlayingInfoPublisher`` (iOS 17–26 APIs).
+@MainActor
+final class PlaybackController: ObservableObject {
+    static let shared = PlaybackController()
+
+    /// Player state for all surfaces.
+    @Published private(set) var state = NowPlayingState()
+    /// Whether the full-screen phone player is shown.
+    @Published var isPlayerPresented = false
+
+    /// The one AVPlayer (also used by `VideoPlayerView` and AirPlay).
+    let player = AVPlayer()
+
+    private let resolver = PlaybackURLResolver()
+    private let nowPlaying = NowPlayingInfoPublisher()
+    private var itemObservers = Set<AnyCancellable>()
+    private var observers = Set<AnyCancellable>()
+    private var timeObserver: Any?
+    private var secrets: [String] = []
+    private var artwork: UIImage?
+    private var isSessionActive = false
+    private let log = Logger(subsystem: "com.bnycftc.carmedya", category: "playback")
+
+    private init() {
+        player.allowsExternalPlayback = true
+        player.usesExternalPlaybackWhileExternalScreenIsActive = true
+        player.automaticallyWaitsToMinimizeStalling = true
+        observePlayer()
+        observeAudioSession()
+        nowPlaying.configureRemoteCommands()
+    }
+
+    // MARK: Commands
+
+    /// Starts `channel`. `queue` is the list it was picked from (next/previous and CarPlay skipping).
+    func play(_ channel: Channel, queue: [Channel] = [], presentPlayer: Bool = true) {
+        let model = AppModel.shared
+        let record = model.record(forChannelID: channel.id)
+        let isXtream = record?.source.isXtream ?? false
+        secrets = isXtream ? xtreamSecrets(sourceID: record?.id) : []
+        artwork = nil
+
+        switch resolver.resolve(channel, isXtreamSource: isXtream) {
+        case .unsupported(let reason):
+            tearDownItem()
+            state.reject(channel, reason: reason, queue: queue)
+            deactivateSession()
+        case .playable(let request):
+            state.begin(channel, request: request, queue: queue)
+            state.programmeTitle = model.epgSummary(for: channel, at: Date())?.now?.title
+            load(request)
+        }
+        model.recordPlayed(channel.id)
+        if presentPlayer {
+            isPlayerPresented = true
+        }
+        publishNowPlaying()
+        loadArtwork(for: channel)
+    }
+
+    func resume() {
+        guard let channel = state.channel else { return }
+        if state.isFailed || player.currentItem == nil {
+            play(channel, queue: state.queue, presentPlayer: false)
+            return
+        }
+        activateSession()
+        if state.isLive {
+            // Rejoin the live edge instead of resuming a stale buffer.
+            player.currentItem?.seek(to: .positiveInfinity, completionHandler: nil)
+        }
+        player.play()
+    }
+
+    func pause() {
+        player.pause()
+        state.markPaused()
+        deactivateSession()
+        publishNowPlaying()
+    }
+
+    func togglePlayPause() {
+        if state.isPlaying || state.phase == .loading { pause() } else { resume() }
+    }
+
+    func stop() {
+        tearDownItem()
+        state.stop()
+        isPlayerPresented = false
+        deactivateSession()
+        nowPlaying.clear()
+    }
+
+    func playNext() {
+        guard let next = state.nextChannel else { return }
+        play(next, queue: state.queue, presentPlayer: false)
+    }
+
+    func playPrevious() {
+        guard let previous = state.previousChannel else { return }
+        play(previous, queue: state.queue, presentPlayer: false)
+    }
+
+    /// Seeks on-demand content. Ignored for live streams.
+    func seek(to seconds: TimeInterval) {
+        guard state.canSeek else { return }
+        player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+    }
+
+    /// Retries the current channel after a failure.
+    func retry() {
+        guard let channel = state.channel else { return }
+        play(channel, queue: state.queue, presentPlayer: false)
+    }
+
+    /// Enables channel skipping on the lock screen and in CarPlay (Settings).
+    func setChannelSkipEnabled(_ enabled: Bool) {
+        nowPlaying.setSkipEnabled(enabled)
+    }
+
+    // MARK: Loading
+
+    private func load(_ request: PlaybackRequest) {
+        tearDownItem()
+        var options: [String: Any] = [:]
+        if let userAgent = request.userAgent {
+            // Public since iOS 16. There is no public option for arbitrary headers (e.g. Referer), and
+            // private AVURLAsset keys are off-limits (CLAUDE.md), so such streams may be refused by the server.
+            options[AVURLAssetHTTPUserAgentKey] = userAgent
+        }
+        if request.referrer != nil {
+            log.info("Stream asks for a Referer header, which AVFoundation cannot send")
+        }
+        let asset = AVURLAsset(url: request.url, options: options)
+        let item = AVPlayerItem(asset: asset)
+        observe(item)
+        player.replaceCurrentItem(with: item)
+        activateSession()
+        player.play()
+    }
+
+    private func tearDownItem() {
+        itemObservers.removeAll()
+        player.pause()
+        player.replaceCurrentItem(with: nil)
+    }
+
+    private func observe(_ item: AVPlayerItem) {
+        item.publisher(for: \.status)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak item] status in
+                guard status == .failed, let item else { return }
+                PlaybackController.shared.handleFailure(item.error)
+            }
+            .store(in: &itemObservers)
+
+        NotificationCenter.default.publisher(for: .AVPlayerItemFailedToPlayToEndTime, object: item)
+            .receive(on: DispatchQueue.main)
+            .sink { notification in
+                let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
+                PlaybackController.shared.handleFailure(error)
+            }
+            .store(in: &itemObservers)
+
+        NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime, object: item)
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                PlaybackController.shared.pause()
+            }
+            .store(in: &itemObservers)
+    }
+
+    private func observePlayer() {
+        player.publisher(for: \.timeControlStatus)
+            .receive(on: DispatchQueue.main)
+            .sink { status in
+                PlaybackController.shared.handleTimeControlStatus(status)
+            }
+            .store(in: &observers)
+
+        timeObserver = player.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 1, preferredTimescale: 2),
+            queue: .main
+        ) { time in
+            let seconds = time.seconds
+            Task { @MainActor in PlaybackController.shared.handleTick(seconds) }
+        }
+    }
+
+    private func observeAudioSession() {
+        NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { notification in
+                PlaybackController.shared.handleInterruption(notification)
+            }
+            .store(in: &observers)
+
+        NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { notification in
+                PlaybackController.shared.handleRouteChange(notification)
+            }
+            .store(in: &observers)
+    }
+
+    // MARK: Event handling
+
+    private func handleTimeControlStatus(_ status: AVPlayer.TimeControlStatus) {
+        guard state.isActive, !state.isFailed else { return }
+        switch status {
+        case .playing:
+            state.markPlaying()
+        case .waitingToPlayAtSpecifiedRate:
+            state.markBuffering()
+        case .paused:
+            if state.phase != .loading { state.markPaused() }
+        @unknown default:
+            break
+        }
+        publishNowPlaying()
+    }
+
+    private func handleTick(_ seconds: Double) {
+        guard state.isActive, !state.isLive else { return }
+        let duration = player.currentItem?.duration.seconds
+        state.updateTime(elapsed: seconds, duration: duration)
+    }
+
+    private func handleFailure(_ error: Error?) {
+        guard state.isActive, !state.isFailed else { return }
+        if let error {
+            state.fail(error, secrets: secrets)
+            let detail = UserFacingError.redactedDetail(of: error, secrets: secrets)
+            log.error("Playback failed: \(detail, privacy: .private)")
+        } else {
+            state.fail(.unknown)
+        }
+        player.pause()
+        deactivateSession()
+        publishNowPlaying()
+    }
+
+    private func handleInterruption(_ notification: Notification) {
+        guard let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+        switch type {
+        case .began:
+            state.markPaused()
+            isSessionActive = false
+            publishNowPlaying()
+        case .ended:
+            let optionsRaw = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            if AVAudioSession.InterruptionOptions(rawValue: optionsRaw).contains(.shouldResume), state.isActive {
+                resume()
+            }
+        @unknown default:
+            break
+        }
+    }
+
+    private func handleRouteChange(_ notification: Notification) {
+        guard let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: raw) else { return }
+        // Headphones unplugged or CarPlay disconnected: pause instead of blasting the phone speaker.
+        if reason == .oldDeviceUnavailable, state.isPlaying {
+            pause()
+        }
+    }
+
+    // MARK: Audio session
+
+    private func activateSession() {
+        guard !isSessionActive else { return }
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playback, mode: .default, policy: .longFormAudio, options: [])
+            try session.setActive(true)
+            isSessionActive = true
+        } catch {
+            log.error("Audio session activation failed: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    private func deactivateSession() {
+        guard isSessionActive else { return }
+        isSessionActive = false
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            log.error("Audio session deactivation failed: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    // MARK: Now Playing
+
+    private func publishNowPlaying() {
+        nowPlaying.update(state, artwork: artwork)
+    }
+
+    private func loadArtwork(for channel: Channel) {
+        guard let url = channel.logoURL else { return }
+        Task {
+            let image = await ImageLoader.shared.image(for: url, maxPixelSize: 300)
+            guard state.channel?.id == channel.id else { return }
+            artwork = image
+            publishNowPlaying()
+        }
+    }
+
+    private func xtreamSecrets(sourceID: String?) -> [String] {
+        guard let sourceID, let password = try? AppModel.shared.credentials.password(forSourceID: sourceID) else {
+            return []
+        }
+        return [password]
+    }
+}
