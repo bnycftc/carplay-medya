@@ -22,13 +22,13 @@ struct RootView: View {
         .overlay {
             // Kept on a separate view so its presentation never competes with the player's.
             Color.clear
+                .allowsHitTesting(false)
                 .fullScreenCover(isPresented: Binding(
                     get: { !onboardingCompleted },
                     set: { presented in if !presented { onboardingCompleted = true } }
                 )) {
                     OnboardingView { onboardingCompleted = true }
                 }
-                .allowsHitTesting(false)
         }
     }
 }

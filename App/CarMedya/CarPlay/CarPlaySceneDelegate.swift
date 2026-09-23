@@ -219,8 +219,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
         let alert = CPAlertTemplate(titleVariants: [failure.message], actions: [dismiss])
         if interfaceController.presentedTemplate != nil {
-            interfaceController.dismissTemplate(animated: false, completion: nil)
+            // Only one presented template is allowed at a time; wait for the dismissal to finish.
+            interfaceController.dismissTemplate(animated: false) { [weak interfaceController] _, _ in
+                interfaceController?.presentTemplate(alert, animated: true, completion: nil)
+            }
+        } else {
+            interfaceController.presentTemplate(alert, animated: true, completion: nil)
         }
-        interfaceController.presentTemplate(alert, animated: true, completion: nil)
     }
 }
