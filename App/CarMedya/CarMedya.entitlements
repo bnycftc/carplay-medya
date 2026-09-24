@@ -2,11 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Requested from Apple (docs/carplay-entitlement-basvurusu.md); not granted yet. -->
+	<!-- Granted by Apple on 2026-09-24 (CarPlay Audio App capability on App ID com.bnycftc.carmedya). -->
 	<key>com.apple.developer.carplay-audio</key>
 	<true/>
-	<key>com.apple.developer.carplay-video</key>
-	<true/>
+	<!--
+	com.apple.developer.carplay-video is still pending with Apple. Automatic signing fails when an
+	entitlement is not enabled on the App ID, so it is re-added here only after Apple grants it.
+	-->
 	<!-- CarPlay must work while the phone is locked: files stay readable after the first unlock. -->
 	<key>com.apple.developer.default-data-protection</key>
 	<string>NSFileProtectionCompleteUntilFirstUserAuthentication</string>

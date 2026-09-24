@@ -1,0 +1,123 @@
+name: TestFlight
+
+# Archives the iOS app with Xcode automatic (cloud-managed) signing and uploads it to
+# App Store Connect / TestFlight. No certificates or profiles are stored in the repo or secrets:
+# xcodebuild authenticates with an App Store Connect API key (-allowProvisioningUpdates +
+# -authenticationKey*), and -exportArchive with App/ExportOptions.plist (destination: upload)
+# signs with the cloud-managed distribution certificate and uploads in one step.
+#
+# Required repository secrets: ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY (raw .p8 text or base64 of it).
+# The API key needs the Admin role: cloud-managed distribution signing is refused for other roles.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+# Only one upload at a time; a queued run waits instead of cancelling one that is mid-upload.
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  TEAM_ID: 26322AY3MH
+
+jobs:
+  testflight:
+    name: Archive and upload to TestFlight
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: xcodebuild -version
+
+      - name: Install XcodeGen and xcbeautify
+        run: brew install xcodegen xcbeautify
+
+      - name: Generate Xcode project
+        working-directory: App
+        run: xcodegen generate
+
+      - name: Install App Store Connect API key
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then echo "::error::Missing repository secret $name"; exit 1; fi
+          done
+          key_dir="$HOME/private_keys"
+          key_path="$key_dir/AuthKey_${ASC_KEY_ID}.p8"
+          mkdir -p "$key_dir"
+          if printf '%s' "$ASC_PRIVATE_KEY" | grep -q 'BEGIN PRIVATE KEY'; then
+            printf '%s\n' "$ASC_PRIVATE_KEY" > "$key_path"          # raw multi-line .p8
+          else
+            printf '%s' "$ASC_PRIVATE_KEY" | base64 --decode > "$key_path"   # base64 of the .p8
+          fi
+          chmod 600 "$key_path"
+          grep -q 'BEGIN PRIVATE KEY' "$key_path" || { echo "::error::ASC_PRIVATE_KEY is not a .p8 key"; exit 1; }
+          echo "ASC_KEY_PATH=$key_path" >> "$GITHUB_ENV"
+
+      - name: Archive (Release, automatic signing)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild archive \
+            -project App/CarMedya.xcodeproj \
+            -scheme CarMedya \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/CarMedya.xcarchive \
+            -derivedDataPath build/DerivedData \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            2>&1 | tee build/archive.log | xcbeautify
+
+      - name: Export and upload to App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath build/CarMedya.xcarchive \
+            -exportOptionsPlist App/ExportOptions.plist \
+            -exportPath build/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            2>&1 | tee build/export.log | xcbeautify
+          echo "Uploaded CarMedya build $GITHUB_RUN_NUMBER. It appears in TestFlight after App Store Connect finishes processing." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload archive and logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testflight-failure-${{ github.run_number }}
+          path: |
+            build/CarMedya.xcarchive
+            build/archive.log
+            build/export.log
+            build/export
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Remove API key
+        if: always()
+        run: rm -rf "$HOME/private_keys"

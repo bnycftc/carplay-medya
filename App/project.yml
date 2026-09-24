@@ -49,8 +49,8 @@ targets:
         PRODUCT_NAME: CarMedya
         PRODUCT_BUNDLE_IDENTIFIER: com.bnycftc.carmedya
         INFOPLIST_FILE: Config/Info.plist
-        # carplay-audio / carplay-video are requested from Apple, not granted yet.
-        # CI builds with CODE_SIGNING_ALLOWED=NO, so the entitlements are not validated there.
+        # carplay-audio is granted; carplay-video is still pending and stays out of the file until granted.
+        # app.yml builds with CODE_SIGNING_ALLOWED=NO; testflight.yml signs automatically (cloud signing).
         CODE_SIGN_ENTITLEMENTS: CarMedya/CarMedya.entitlements
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: NO

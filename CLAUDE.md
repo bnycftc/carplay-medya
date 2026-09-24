@@ -25,7 +25,12 @@ Plan ve gerekçeler: `carplay-medya-plani.md` (bu dosyayı değiştirme).
 - Yerelde yapılabilecek kontrol: `swiftc -parse` ile sözdizimi (tip denetimi yok).
 - iOS kodunu temkinli yaz: iOS 17 SDK API'leri, yeni API'ler `@available`/`#available` arkasında; emin olunmayan iOS 27 sembolü yazılmaz.
 - Test edilebilir mantık `App/`'e değil `CarMediaKit`'e konur.
-- `.github/workflows/ci.yml` paketleri macOS + Windows'ta test eder; `app.yml` iOS uygulamasını derler. TestFlight henüz yok.
+- `.github/workflows/ci.yml` paketleri macOS + Windows'ta test eder; `app.yml` iOS uygulamasını derler.
+- `.github/workflows/testflight.yml` (elle `gh workflow run testflight.yml` veya `v*` etiketi): XcodeGen → `xcodebuild archive` (otomatik/bulut imzalama, `-allowProvisioningUpdates` + App Store Connect API anahtarı, `DEVELOPMENT_TEAM=26322AY3MH`, `CURRENT_PROJECT_VERSION=$GITHUB_RUN_NUMBER`) → `xcodebuild -exportArchive` + `App/ExportOptions.plist` (`app-store-connect`, `destination: upload`) ile TestFlight'a yükler. Sertifika/profil saklanmaz.
+  - Secret'lar: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY` (ham çok satırlı `.p8` ya da base64'ü). Anahtar: App Store Connect → Users and Access → Integrations → Team Keys, rol **Admin** (App Manager bulut dağıtım imzasında `Cloud signing permission error` verir); `.p8` yalnız bir kez indirilir.
+  - İlk yükleme için App Store Connect'te aynı bundle ID (`com.bnycftc.carmedya`) ile uygulama kaydı olmalı.
+  - Sürüm `project.yml`'de `MARKETING_VERSION`; build numarasını elle artırma, iş akışı verir. Yükleme 1024×1024 alfasız ikon ister (`AppIcon.appiconset/AppIcon-1024.png`, şimdilik yer tutucu).
+- **Entitlement durumu:** `carplay-audio` verildi (2026-09-24), `CarMedya.entitlements`'ta. `carplay-video` beklemede; otomatik imzalama App ID'de açık olmayan entitlement'ta başarısız olduğundan dosyada yok — Apple verince `com.apple.developer.carplay-video` geri eklenir (ve portalda App ID'ye capability açılır).
 - Mac'te yerel çalışma: `brew install xcodegen; cd App; xcodegen generate; open CarMedya.xcodeproj`. CarPlay simülatörü entitlement onayı gelmeden çalışmaz.
 
 ## Windows'ta derleme/test
