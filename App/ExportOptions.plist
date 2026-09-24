@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Used by .github/workflows/testflight.yml: export with cloud signing and upload to App Store Connect. -->
+	<!-- Used by .github/workflows/testflight.yml: sign for App Store (stored Apple Distribution identity if installed, else cloud-managed) and upload. The workflow also exports a local copy with destination "export" to verify the signature first. -->
 	<!-- "app-store-connect" replaces the deprecated "app-store" (Xcode 15.3+). -->
 	<key>method</key>
 	<string>app-store-connect</string>
