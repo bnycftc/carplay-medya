@@ -244,3 +244,159 @@ private struct AccountSummaryView: View {
         }
     }
 }
+
+/// One field for everything a provider sends: an M3U address, a `get.php` link, or a message with
+/// server / username / password lines. Shows what was recognized before adding it.
+struct QuickAddSourceView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @State private var name = ""
+    @State private var isBusy = false
+    @State private var summary: XtreamAccountSummary?
+    @State private var errorMessage: String?
+
+    private var detected: DetectedSource? { SourceLinkParser.detect(text) }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextEditor(text: $text)
+                        .frame(minHeight: 110)
+                        .font(.callout.monospaced())
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .overlay(alignment: .topLeading) {
+                            if text.isEmpty {
+                                Text("Sağlayıcınızın verdiği bağlantıyı veya mesajı buraya yapıştırın")
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 8)
+                                    .padding(.leading, 5)
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                    PasteButton(payloadType: String.self) { strings in
+                        if let first = strings.first {
+                            text = first
+                        }
+                    }
+                } footer: {
+                    Text("M3U adresi, get.php bağlantısı veya \"sunucu / kullanıcı adı / şifre\" içeren mesaj olabilir. Yalnızca kullanma hakkınız olan kaynakları ekleyin.")
+                }
+
+                detectionSection
+
+                Section {
+                    TextField("Ad (isteğe bağlı)", text: $name)
+                }
+
+                if let errorMessage {
+                    Section {
+                        Text(verbatim: errorMessage).foregroundStyle(.red)
+                    }
+                }
+            }
+            .navigationTitle("Bağlantı yapıştır")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Vazgeç") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    if isBusy {
+                        ProgressView()
+                    } else {
+                        Button("Ekle") { save() }
+                            .disabled(detected == nil)
+                    }
+                }
+            }
+            .interactiveDismissDisabled(isBusy)
+            .onChange(of: text) { _, _ in
+                summary = nil
+                errorMessage = nil
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var detectionSection: some View {
+        switch detected {
+        case .xtream(let server, let username, _)?:
+            Section {
+                Label("Xtream hesabı algılandı", systemImage: "checkmark.seal.fill")
+                    .foregroundStyle(.green)
+                LabeledContent("Sunucu") { Text(verbatim: server).lineLimit(1).truncationMode(.middle) }
+                LabeledContent("Kullanıcı") { Text(verbatim: username) }
+                LabeledContent("Şifre") { Text(verbatim: "••••••") }
+                Button {
+                    testConnection()
+                } label: {
+                    Text("Bağlantıyı test et")
+                }
+                .disabled(isBusy)
+                if let summary {
+                    AccountSummaryView(summary: summary)
+                }
+            } footer: {
+                Text("Canlı kanallarla birlikte filmler, diziler ve program rehberi de gelir.")
+            }
+        case .m3u(let url)?:
+            Section {
+                Label("M3U listesi algılandı", systemImage: "list.bullet.rectangle")
+                    .foregroundStyle(.green)
+                Text(verbatim: url)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+            }
+        case nil:
+            if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Section {
+                    Label("Bağlantı veya hesap bilgisi bulunamadı", systemImage: "questionmark.circle")
+                        .foregroundStyle(.orange)
+                }
+            }
+        }
+    }
+
+    private func testConnection() {
+        guard case .xtream(let server, let username, let password)? = detected else { return }
+        errorMessage = nil
+        isBusy = true
+        Task {
+            do {
+                let credentials = try SourceDraft.xtreamCredentials(server: server, username: username, password: password)
+                summary = try await model.testXtream(credentials)
+            } catch {
+                errorMessage = UserFacingError.from(error).message
+            }
+            isBusy = false
+        }
+    }
+
+    private func save() {
+        guard let detected else { return }
+        errorMessage = nil
+        isBusy = true
+        Task {
+            do {
+                switch detected {
+                case .xtream(let server, let username, let password):
+                    let credentials = try SourceDraft.xtreamCredentials(server: server, username: username, password: password)
+                    try await model.addXtream(name: name, credentials: credentials)
+                case .m3u(let url):
+                    try await model.addM3U(name: name, urlText: url, userAgent: nil)
+                }
+                dismiss()
+            } catch SourceStoreError.duplicateSource {
+                errorMessage = String(localized: "Bu kaynak zaten ekli.")
+            } catch {
+                errorMessage = UserFacingError.from(error).message
+            }
+            isBusy = false
+        }
+    }
+}

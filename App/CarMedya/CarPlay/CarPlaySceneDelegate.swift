@@ -131,7 +131,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         recentsTemplate?.updateSections([CPListSection(items: recents.map { makeItem($0, queue: recents) })])
 
         // Kanallar: one section per source, one row per group (drill down to channels).
-        let sections = library.sections.map { section in
+        let sections = library.visibleSections.map { section in
             ListSection(header: section.title, items: section.groups)
         }
         let capped = ListCapping.cap(sections, maxSections: maxSections, maxItems: maxItems)

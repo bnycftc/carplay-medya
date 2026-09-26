@@ -5,6 +5,7 @@ import SwiftUI
 struct LibraryView: View {
     @EnvironmentObject private var model: AppModel
     @State private var query = ""
+    @State private var editsGroups = false
 
     var body: some View {
         NavigationStack {
@@ -15,7 +16,17 @@ struct LibraryView: View {
                 }
                 .searchable(text: $query, prompt: Text("Kanal ara"))
                 .refreshable { await model.refreshAll(force: true) }
+                .sheet(isPresented: $editsGroups) { GroupsEditorView() }
                 .toolbar {
+                    if !model.library.isEmpty {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                editsGroups = true
+                            } label: {
+                                Label("Grupları düzenle", systemImage: "line.3.horizontal.decrease.circle")
+                            }
+                        }
+                    }
                     if !model.guides.isEmpty {
                         ToolbarItem(placement: .topBarTrailing) {
                             NavigationLink {
@@ -53,9 +64,18 @@ struct LibraryView: View {
                 }
                 .listStyle(.plain)
             }
+        } else if model.library.visibleSections.isEmpty {
+            ContentUnavailableView {
+                Label("Tüm gruplar gizli", systemImage: "eye.slash")
+            } description: {
+                Text("Göstermek istediğiniz grupları açın. Arama gizli grupları da bulur.")
+            } actions: {
+                Button("Grupları düzenle") { editsGroups = true }
+                    .buttonStyle(.borderedProminent)
+            }
         } else {
             List {
-                ForEach(model.library.sections) { section in
+                ForEach(model.library.visibleSections) { section in
                     Section {
                         ForEach(section.groups) { group in
                             NavigationLink(value: group.id) {

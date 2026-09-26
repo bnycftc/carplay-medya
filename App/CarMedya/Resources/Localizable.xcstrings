@@ -11,6 +11,16 @@
         }
       }
     },
+    "%lld dakika": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld minutes"
+          }
+        }
+      }
+    },
     "%lld dk kaldı": {
       "localizations": {
         "en": {
@@ -195,6 +205,36 @@
         }
       }
     },
+    "Bağlantı veya hesap bilgisi bulunamadı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No link or account details found"
+          }
+        }
+      }
+    },
+    "Bağlantı veya mesaj yapıştır": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste link or message"
+          }
+        }
+      }
+    },
+    "Bağlantı yapıştır": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste link"
+          }
+        }
+      }
+    },
     "Bağlantıyı test et": {
       "localizations": {
         "en": {
@@ -271,6 +311,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Expires"
+          }
+        }
+      }
+    },
+    "Bitti": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
           }
         }
       }
@@ -375,6 +425,26 @@
         }
       }
     },
+    "Bu kaynak zaten ekli.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This source is already added."
+          }
+        }
+      }
+    },
+    "Bu liste bir Xtream hesabı. Hesap olarak eklenirse filmler, diziler, rehber ve daha uyumlu yayın biçimi gelir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This list is an Xtream account. Added as an account it brings movies, series, the guide and a more compatible stream format."
+          }
+        }
+      }
+    },
     "Bu liste zaten ekli.": {
       "localizations": {
         "en": {
@@ -451,6 +521,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch live"
+          }
+        }
+      }
+    },
+    "Canlı kanallarla birlikte filmler, diziler ve program rehberi de gelir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies, series and the programme guide come along with live channels."
           }
         }
       }
@@ -855,6 +935,36 @@
         }
       }
     },
+    "Grup ara": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search groups"
+          }
+        }
+      }
+    },
+    "Grupları düzenle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit groups"
+          }
+        }
+      }
+    },
+    "Göstermek istediğiniz grupları açın. Arama gizli grupları da bulur.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on the groups you want to see. Search also finds hidden groups."
+          }
+        }
+      }
+    },
     "Güvenli sürüş": {
       "localizations": {
         "en": {
@@ -1005,6 +1115,16 @@
         }
       }
     },
+    "Kanal listesi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Channel list"
+          }
+        }
+      }
+    },
     "Kanal oynat": {
       "localizations": {
         "en": {
@@ -1145,6 +1265,16 @@
         }
       }
     },
+    "Kullanıcı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Username"
+          }
+        }
+      }
+    },
     "Kullanıcı adı": {
       "localizations": {
         "en": {
@@ -1205,6 +1335,16 @@
         }
       }
     },
+    "M3U adresi, get.php bağlantısı veya \"sunucu / kullanıcı adı / şifre\" içeren mesaj olabilir. Yalnızca kullanma hakkınız olan kaynakları ekleyin.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An M3U address, a get.php link or a message with \"server / username / password\". Only add sources you have the right to use."
+          }
+        }
+      }
+    },
     "M3U liste": {
       "localizations": {
         "en": {
@@ -1231,6 +1371,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "M3U list"
+          }
+        }
+      }
+    },
+    "M3U listesi algılandı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "M3U list detected"
           }
         }
       }
@@ -1305,6 +1455,16 @@
         }
       }
     },
+    "Program bitince": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the programme ends"
+          }
+        }
+      }
+    },
     "Puana göre": {
       "localizations": {
         "en": {
@@ -1341,6 +1501,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No guide"
+          }
+        }
+      }
+    },
+    "Sağlayıcınızın verdiği bağlantıyı veya mesajı buraya yapıştırın": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste the link or message from your provider here"
           }
         }
       }
@@ -1471,6 +1641,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No results"
+          }
+        }
+      }
+    },
+    "Sunucu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server"
           }
         }
       }
@@ -1665,12 +1845,42 @@
         }
       }
     },
+    "Tüm gruplar gizli": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All groups are hidden"
+          }
+        }
+      }
+    },
     "Tümü": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "All"
+          }
+        }
+      }
+    },
+    "Tümünü gizle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide all"
+          }
+        }
+      }
+    },
+    "Tümünü göster": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all"
           }
         }
       }
@@ -1735,6 +1945,26 @@
         }
       }
     },
+    "Uyku zamanlayıcı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep timer"
+          }
+        }
+      }
+    },
+    "Uyku zamanlayıcı: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep timer: %@"
+          }
+        }
+      }
+    },
     "Vazgeç": {
       "localizations": {
         "en": {
@@ -1775,6 +2005,26 @@
         }
       }
     },
+    "Xtream hesabı algılandı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xtream account detected"
+          }
+        }
+      }
+    },
+    "Xtream hesabına dönüştür": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convert to Xtream account"
+          }
+        }
+      }
+    },
     "Yalnızca kullanma hakkınız olan listeleri ekleyin.": {
       "localizations": {
         "en": {
@@ -1791,6 +2041,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tomorrow"
+          }
+        }
+      }
+    },
+    "Yayın koptu, yeniden bağlanılıyor (%lld/%lld)…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stream dropped, reconnecting (%lld/%lld)…"
           }
         }
       }
@@ -1851,6 +2111,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Loading…"
+          }
+        }
+      }
+    },
+    "Zamanlayıcıyı kapat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off timer"
           }
         }
       }
@@ -1961,6 +2231,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "We provide no content. The app does not contain, host or recommend channels, lists or streams. It only plays sources you add and have the right to use."
+          }
+        }
+      }
+    },
+    "Şifre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Password"
           }
         }
       }

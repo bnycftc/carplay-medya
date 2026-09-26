@@ -33,6 +33,8 @@ public struct NowPlayingState: Sendable, Equatable {
     public private(set) var duration: TimeInterval?
     /// Title of the programme on air (from the guide), shown as subtitle.
     public var programmeTitle: String?
+    /// Automatic reconnection in progress: attempt number (1…3), or `nil`.
+    public var reconnectAttempt: Int?
 
     /// Creates an idle state.
     public init() {}
@@ -49,6 +51,7 @@ public struct NowPlayingState: Sendable, Equatable {
         elapsed = 0
         duration = nil
         programmeTitle = nil
+        reconnectAttempt = nil
     }
 
     /// Selects `channel` but records that it cannot be played, so the UI can say why.

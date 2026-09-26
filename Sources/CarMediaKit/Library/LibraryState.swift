@@ -12,11 +12,26 @@ public struct LibraryPreferences: Sendable, Hashable, Codable {
     public var favoriteIDs: [String]
     /// Recently played channel ids, most recent first.
     public var recentIDs: [String]
+    /// Ids (``LibraryGroup/id``) of groups the user hid from the channel list and CarPlay.
+    public var hiddenGroupIDs: [String]
 
     /// Creates preferences.
-    public init(favoriteIDs: [String] = [], recentIDs: [String] = []) {
+    public init(favoriteIDs: [String] = [], recentIDs: [String] = [], hiddenGroupIDs: [String] = []) {
         self.favoriteIDs = favoriteIDs
         self.recentIDs = recentIDs
+        self.hiddenGroupIDs = hiddenGroupIDs
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case favoriteIDs, recentIDs, hiddenGroupIDs
+    }
+
+    /// Decodes files written by older versions (without hidden groups).
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        favoriteIDs = try container.decodeIfPresent([String].self, forKey: .favoriteIDs) ?? []
+        recentIDs = try container.decodeIfPresent([String].self, forKey: .recentIDs) ?? []
+        hiddenGroupIDs = try container.decodeIfPresent([String].self, forKey: .hiddenGroupIDs) ?? []
     }
 }
 
@@ -103,6 +118,40 @@ public struct LibraryState: Sendable {
     /// Replaces favorites/recents (e.g. after rebuilding content in the background).
     public mutating func setPreferences(_ preferences: LibraryPreferences) {
         self.preferences = preferences
+    }
+
+    // MARK: Hidden groups
+
+    /// Sections with hidden groups removed (sections left empty are dropped). Use for lists and CarPlay.
+    public var visibleSections: [LibrarySection] {
+        let hidden = Set(preferences.hiddenGroupIDs)
+        guard !hidden.isEmpty else { return sections }
+        return sections.compactMap { section in
+            let groups = section.groups.filter { !hidden.contains($0.id) }
+            return groups.isEmpty ? nil : LibrarySection(id: section.id, title: section.title, groups: groups)
+        }
+    }
+
+    /// Visible groups across sources.
+    public var visibleGroups: [LibraryGroup] { visibleSections.flatMap(\.groups) }
+
+    /// Whether the user hid `groupID`.
+    public func isGroupHidden(_ groupID: String) -> Bool {
+        preferences.hiddenGroupIDs.contains(groupID)
+    }
+
+    /// Hides or shows one group.
+    public mutating func setGroup(_ groupID: String, hidden: Bool) {
+        preferences.hiddenGroupIDs.removeAll { $0 == groupID }
+        if hidden { preferences.hiddenGroupIDs.append(groupID) }
+    }
+
+    /// Hides or shows every group of a source.
+    public mutating func setAllGroups(ofSource sourceID: String, hidden: Bool) {
+        let ids = sections.first { $0.id == sourceID }?.groups.map(\.id) ?? []
+        let set = Set(ids)
+        preferences.hiddenGroupIDs.removeAll { set.contains($0) }
+        if hidden { preferences.hiddenGroupIDs.append(contentsOf: ids) }
     }
 
     /// All groups across sources.

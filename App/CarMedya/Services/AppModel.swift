@@ -228,6 +228,34 @@ final class AppModel: ObservableObject {
         return try provider.xtreamClient(sourceID: id, account: account)
     }
 
+    // MARK: Hidden groups
+
+    func setGroup(_ groupID: String, hidden: Bool) {
+        library.setGroup(groupID, hidden: hidden)
+        savePreferences()
+    }
+
+    func setAllGroups(ofSource sourceID: String, hidden: Bool) {
+        library.setAllGroups(ofSource: sourceID, hidden: hidden)
+        savePreferences()
+    }
+
+    // MARK: Converting M3U links to Xtream accounts
+
+    /// The Xtream account hidden in an M3U source address (`get.php?username=…&password=…`), if any.
+    func xtreamAccount(inM3U record: SourceRecord) -> DetectedSource? {
+        guard case .m3uURL(_, _, let url, _) = record.source else { return nil }
+        return SourceLinkParser.xtreamAccount(inM3UAddress: url)
+    }
+
+    /// Replaces an M3U source that is really an Xtream account with the account (movies, series, HLS).
+    func convertToXtream(_ record: SourceRecord) async throws {
+        guard case .xtream(let server, let username, let password)? = xtreamAccount(inM3U: record) else { return }
+        let credentials = try SourceDraft.xtreamCredentials(server: server, username: username, password: password)
+        try await addXtream(name: record.source.name, credentials: credentials)
+        await remove(sourceID: record.id)
+    }
+
     func recordPlayed(_ channelID: String) {
         library.recordPlayed(channelID)
         savePreferences()

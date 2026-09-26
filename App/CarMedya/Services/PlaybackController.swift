@@ -19,6 +19,8 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var state = NowPlayingState()
     /// Whether the full-screen phone player is shown.
     @Published var isPlayerPresented = false
+    /// When the sleep timer pauses playback, if set.
+    @Published private(set) var sleepDeadline: Date?
 
     /// The one AVPlayer (also used by `VideoPlayerView` and AirPlay).
     let player = AVPlayer()
@@ -35,6 +37,12 @@ final class PlaybackController: ObservableObject {
     private var sessionPolicy: AVAudioSession.RouteSharingPolicy = .longFormAudio
     /// Position to seek to once the current item is ready (continue watching).
     private var pendingStart: TimeInterval?
+    /// Request of the current item, replayed by automatic reconnection.
+    private var currentRequest: PlaybackRequest?
+    private var reconnect = ReconnectPolicy()
+    private var reconnectTask: Task<Void, Never>?
+    private var stallTask: Task<Void, Never>?
+    private var sleepTask: Task<Void, Never>?
     private let log = Logger(subsystem: "com.bnycftc.carmedya", category: "playback")
 
     private init() {
@@ -53,6 +61,9 @@ final class PlaybackController: ObservableObject {
     func play(_ channel: Channel, queue: [Channel] = [], presentPlayer: Bool = true, startAt: TimeInterval? = nil) {
         saveProgressOfCurrentItem()
         pendingStart = nil
+        cancelReconnect()
+        reconnect.reset()
+        currentRequest = nil
         let model = AppModel.shared
         let record = model.record(forChannelID: channel.id)
         let isXtream = record?.source.isXtream ?? false
@@ -70,6 +81,7 @@ final class PlaybackController: ObservableObject {
                 state.programmeTitle = model.epgSummary(for: channel, at: Date())?.now?.title
             }
             pendingStart = request.isLive ? nil : startAt.flatMap { $0 > 0 ? $0 : nil }
+            currentRequest = request
             load(request)
         }
         if channel.kind == .live {
@@ -97,6 +109,7 @@ final class PlaybackController: ObservableObject {
     }
 
     func pause() {
+        cancelReconnect()
         saveProgressOfCurrentItem()
         CatalogModel.shared.flush()
         player.pause()
@@ -110,6 +123,8 @@ final class PlaybackController: ObservableObject {
     }
 
     func stop() {
+        cancelReconnect()
+        setSleepTimer(nil)
         saveProgressOfCurrentItem()
         CatalogModel.shared.flush()
         tearDownItem()
@@ -133,6 +148,26 @@ final class PlaybackController: ObservableObject {
     func seek(to seconds: TimeInterval) {
         guard state.canSeek else { return }
         player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+    }
+
+    /// Pauses after `minutes` (or at `date`); `nil` turns the timer off.
+    func setSleepTimer(_ minutes: Int?) {
+        setSleepTimer(until: minutes.map { Date().addingTimeInterval(TimeInterval($0) * 60) })
+    }
+
+    func setSleepTimer(until date: Date?) {
+        sleepTask?.cancel()
+        sleepTask = nil
+        sleepDeadline = date
+        guard let date else { return }
+        sleepTask = Task { [weak self] in
+            let seconds = max(0, date.timeIntervalSinceNow)
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            guard !Task.isCancelled, let self else { return }
+            self.sleepDeadline = nil
+            self.sleepTask = nil
+            self.pause()
+        }
     }
 
     /// Retries the current channel after a failure.
@@ -246,8 +281,13 @@ final class PlaybackController: ObservableObject {
         switch status {
         case .playing:
             state.markPlaying()
+            state.reconnectAttempt = nil
+            reconnect.markPlaying(at: Date())
+            cancelStallTimer()
         case .waitingToPlayAtSpecifiedRate:
             state.markBuffering()
+            reconnect.markInterrupted(at: Date())
+            startStallTimerIfLive()
         case .paused:
             if state.phase != .loading { state.markPaused() }
         @unknown default:
@@ -294,6 +334,50 @@ final class PlaybackController: ObservableObject {
         )
     }
 
+    // MARK: Reconnection (live streams)
+
+    /// Schedules a replay of the current live stream. Returns `false` when retries are used up.
+    private func scheduleReconnect() -> Bool {
+        guard state.isLive, let request = currentRequest, let channelID = state.channel?.id,
+              let delay = reconnect.noteFailure(at: Date()) else { return false }
+        state.reconnectAttempt = reconnect.attempt
+        state.markBuffering()
+        publishNowPlaying()
+        log.info("Live stream dropped; reconnecting (attempt \(self.reconnect.attempt, privacy: .public))")
+        reconnectTask?.cancel()
+        reconnectTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled, let self, self.state.channel?.id == channelID else { return }
+            self.reconnectTask = nil
+            self.load(request)
+        }
+        return true
+    }
+
+    private func startStallTimerIfLive() {
+        guard state.isLive, stallTask == nil else { return }
+        stallTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(ReconnectPolicy.stallTimeout * 1_000_000_000))
+            guard !Task.isCancelled, let self else { return }
+            self.stallTask = nil
+            guard self.player.timeControlStatus == .waitingToPlayAtSpecifiedRate, self.state.isLive else { return }
+            // Reconnects while retries remain, otherwise reports the stall as a failure.
+            self.handleFailure(CarMediaError.transport("stalled"))
+        }
+    }
+
+    private func cancelStallTimer() {
+        stallTask?.cancel()
+        stallTask = nil
+    }
+
+    private func cancelReconnect() {
+        reconnectTask?.cancel()
+        reconnectTask = nil
+        cancelStallTimer()
+        state.reconnectAttempt = nil
+    }
+
     private static func finiteDuration(_ seconds: Double?) -> Double? {
         guard let seconds, seconds.isFinite, seconds > 0 else { return nil }
         return seconds
@@ -301,6 +385,8 @@ final class PlaybackController: ObservableObject {
 
     private func handleFailure(_ error: Error?) {
         guard state.isActive, !state.isFailed else { return }
+        cancelStallTimer()
+        if scheduleReconnect() { return }
         if let error {
             state.fail(error, secrets: secrets)
             let detail = UserFacingError.redactedDetail(of: error, secrets: secrets)

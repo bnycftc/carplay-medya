@@ -7,6 +7,7 @@ struct PlayerScreen: View {
     @EnvironmentObject private var playback: PlaybackController
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var motion: MotionMonitor
+    @State private var showsChannelList = false
 
     var body: some View {
         let state = playback.state
@@ -38,6 +39,10 @@ struct PlayerScreen: View {
             }
         }
         .background(Color(uiColor: .systemBackground))
+        .sheet(isPresented: $showsChannelList) {
+            ChannelSwitcherSheet()
+                .presentationDetents([.medium, .large])
+        }
         .onAppear { motion.beginMonitoring() }
         .onDisappear { motion.endMonitoring() }
     }
@@ -67,11 +72,55 @@ struct PlayerScreen: View {
                 .tint(isFavorite ? .yellow : .accentColor)
                 .accessibilityLabel(isFavorite ? Text("Favorilerden çıkar") : Text("Favorilere ekle"))
             }
+            sleepMenu(state)
+            if state.queue.count > 1 {
+                Button {
+                    showsChannelList = true
+                } label: {
+                    Image(systemName: "list.bullet")
+                        .font(.title3)
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(Text("Kanal listesi"))
+            }
             RoutePickerView()
                 .frame(width: 44, height: 44)
                 .accessibilityLabel(Text("AirPlay"))
         }
         .padding(.horizontal, 8)
+    }
+
+    private func sleepMenu(_ state: NowPlayingState) -> some View {
+        Menu {
+            ForEach([15, 30, 45, 60, 90], id: \.self) { minutes in
+                Button {
+                    playback.setSleepTimer(minutes)
+                } label: {
+                    Text("\(minutes) dakika")
+                }
+            }
+            if let channel = state.channel, state.isLive,
+               let end = model.epgSummary(for: channel, at: Date())?.now?.stop {
+                Button {
+                    playback.setSleepTimer(until: end)
+                } label: {
+                    Text("Program bitince")
+                }
+            }
+            if playback.sleepDeadline != nil {
+                Divider()
+                Button(role: .destructive) {
+                    playback.setSleepTimer(nil)
+                } label: {
+                    Text("Zamanlayıcıyı kapat")
+                }
+            }
+        } label: {
+            Image(systemName: playback.sleepDeadline == nil ? "moon.zzz" : "moon.zzz.fill")
+                .font(.title3)
+                .frame(width: 44, height: 44)
+        }
+        .accessibilityLabel(Text("Uyku zamanlayıcı"))
     }
 
     private var drivingCover: some View {
@@ -124,8 +173,22 @@ struct PlayerScreen: View {
             if state.phase == .loading {
                 HStack(spacing: 8) {
                     ProgressView()
-                    Text("Yükleniyor…").foregroundStyle(.secondary)
+                    if let attempt = state.reconnectAttempt {
+                        Text("Yayın koptu, yeniden bağlanılıyor (\(attempt)/\(ReconnectPolicy.maxAttempts))…")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Yükleniyor…").foregroundStyle(.secondary)
+                    }
                 }
+            }
+            if let deadline = playback.sleepDeadline {
+                Label {
+                    Text("Uyku zamanlayıcı: \(deadline, style: .timer)")
+                } icon: {
+                    Image(systemName: "moon.zzz.fill")
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
             }
         }
     }
@@ -184,5 +247,55 @@ struct PlayerScreen: View {
             .accessibilityLabel(Text("Sonraki kanal"))
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+
+/// Channel list inside the player: switch channels without closing it.
+struct ChannelSwitcherSheet: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var playback: PlaybackController
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+
+    var body: some View {
+        let queue = playback.state.queue
+        let channels = model.library.filter(queue, query: query)
+        NavigationStack {
+            TimelineView(.everyMinute) { context in
+                ScrollViewReader { proxy in
+                    List(channels) { channel in
+                        Button {
+                            playback.play(channel, queue: queue, presentPlayer: true)
+                            dismiss()
+                        } label: {
+                            ChannelRow(
+                                title: channel.title,
+                                logoURL: channel.logoURL,
+                                isRadio: channel.isRadio,
+                                summary: model.epgSummary(for: channel, at: context.date),
+                                isFavorite: model.isFavorite(channel.id),
+                                isCurrent: playback.state.channel?.id == channel.id
+                            )
+                        }
+                        .id(channel.id)
+                    }
+                    .listStyle(.plain)
+                    .onAppear {
+                        if let current = playback.state.channel?.id {
+                            proxy.scrollTo(current, anchor: .center)
+                        }
+                    }
+                }
+            }
+            .searchable(text: $query, prompt: Text("Kanal ara"))
+            .navigationTitle("Kanallar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Kapat") { dismiss() }
+                }
+            }
+        }
     }
 }

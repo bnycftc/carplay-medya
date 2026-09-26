@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 
 struct SourcesView: View {
     private enum Sheet: String, Identifiable {
-        case m3u, xtream
+        case quick, m3u, xtream
         var id: String { rawValue }
     }
 
@@ -22,6 +22,13 @@ struct SourcesView: View {
                         Label("Kaynak yok", systemImage: "antenna.radiowaves.left.and.right")
                     } description: {
                         Text("Uygulama içerik sağlamaz. Kendi M3U listenizi, Xtream hesabınızı veya bir dosyayı ekleyin.")
+                    } actions: {
+                        Button {
+                            sheet = .quick
+                        } label: {
+                            Label("Bağlantı yapıştır", systemImage: "doc.on.clipboard")
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
                 }
                 ForEach(model.records) { record in
@@ -50,6 +57,8 @@ struct SourcesView: View {
             .refreshable { await model.refreshAll(force: true) }
             .toolbar {
                 Menu {
+                    Button { sheet = .quick } label: { Label("Bağlantı veya mesaj yapıştır", systemImage: "doc.on.clipboard") }
+                    Divider()
                     Button { sheet = .m3u } label: { Label("M3U liste adresi", systemImage: "link") }
                     Button { sheet = .xtream } label: { Label("Xtream Codes hesabı", systemImage: "person.badge.key") }
                     Button { isImporting = true } label: { Label("Dosyadan içe aktar", systemImage: "folder") }
@@ -59,6 +68,7 @@ struct SourcesView: View {
             }
             .sheet(item: $sheet) { sheet in
                 switch sheet {
+                case .quick: QuickAddSourceView()
                 case .m3u: AddM3USourceView()
                 case .xtream: AddXtreamSourceView()
                 }
@@ -96,6 +106,9 @@ struct SourcesView: View {
 private struct SourceRow: View {
     let record: SourceRecord
     let isRefreshing: Bool
+    @EnvironmentObject private var model: AppModel
+    @State private var isConverting = false
+    @State private var conversionError: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -126,8 +139,47 @@ private struct SourceRow: View {
                     .font(.caption)
                     .foregroundStyle(.red)
             }
+            if model.xtreamAccount(inM3U: record) != nil {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Bu liste bir Xtream hesabı. Hesap olarak eklenirse filmler, diziler, rehber ve daha uyumlu yayın biçimi gelir.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if isConverting {
+                        ProgressView()
+                    } else {
+                        Button {
+                            convert()
+                        } label: {
+                            Label("Xtream hesabına dönüştür", systemImage: "arrow.triangle.2.circlepath")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    if let conversionError {
+                        Text(verbatim: conversionError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+                .padding(.top, 4)
+            }
         }
         .padding(.vertical, 2)
+    }
+
+    private func convert() {
+        isConverting = true
+        conversionError = nil
+        Task {
+            do {
+                try await model.convertToXtream(record)
+            } catch SourceStoreError.duplicateSource {
+                conversionError = String(localized: "Bu hesap zaten ekli.")
+            } catch {
+                conversionError = UserFacingError.from(error).message
+            }
+            isConverting = false
+        }
     }
 
     private var icon: String {
