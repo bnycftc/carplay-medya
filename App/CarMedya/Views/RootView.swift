@@ -9,6 +9,8 @@ struct RootView: View {
         TabView {
             LibraryView()
                 .tabItem { Label("Kütüphane", systemImage: "rectangle.stack") }
+            CatalogView()
+                .tabItem { Label("Filmler ve Diziler", systemImage: "film.stack") }
             FavoritesView()
                 .tabItem { Label("Favoriler", systemImage: "star") }
             SourcesView()

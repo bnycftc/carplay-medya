@@ -9,6 +9,8 @@ struct SettingsView: View {
     @AppStorage(SettingsKeys.channelSkipEnabled) private var channelSkipEnabled = true
     @AppStorage(SettingsKeys.onboardingCompleted) private var onboardingCompleted = false
     @Environment(\.openURL) private var openURL
+    @ObservedObject private var catalog = CatalogModel.shared
+    @State private var confirmClearHistory = false
 
     var body: some View {
         NavigationStack {
@@ -39,6 +41,17 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Button(role: .destructive) {
+                        confirmClearHistory = true
+                    } label: {
+                        Label("İzleme geçmişini temizle", systemImage: "trash")
+                    }
+                    .disabled(catalog.continueWatching.entries.isEmpty && catalog.continueWatching.watchedIDs.isEmpty)
+                } footer: {
+                    Text("Film ve bölümlerde kaldığınız yerler ile izlendi işaretleri yalnızca bu cihazda tutulur.")
+                }
+
+                Section {
                     Label {
                         Text("İçerik sağlamıyoruz. Uygulama kanal, liste veya yayın içermez, barındırmaz ve önermez. Yalnızca kendi eklediğiniz ve kullanma hakkınız olan kaynakları oynatır.")
                     } icon: {
@@ -63,6 +76,10 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Ayarlar")
+            .confirmationDialog("İzleme geçmişi silinsin mi?", isPresented: $confirmClearHistory, titleVisibility: .visible) {
+                Button("Geçmişi temizle", role: .destructive) { catalog.clearHistory() }
+                Button("Vazgeç", role: .cancel) {}
+            }
             .nowPlayingInset()
         }
     }

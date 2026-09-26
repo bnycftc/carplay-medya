@@ -30,6 +30,8 @@ final class AppModel: ObservableObject {
     private let presenter = EPGPresenter()
     private var saveGeneration = 0
     private var didStart = false
+    /// Sources of playables that are not in the channel library (movies, episodes, archive programmes).
+    private var playableSources: [String: String] = [:]
     private let log = Logger(subsystem: "com.bnycftc.carmedya", category: "sources")
 
     /// Sources older than this are refreshed on launch (Xtream sources are always refreshed).
@@ -53,6 +55,8 @@ final class AppModel: ObservableObject {
         let provider = DefaultPlaylistProvider(credentials: keychain, resolveBookmark: { data in
             var isStale = false
             return try URL(resolvingBookmarkData: data, options: [], relativeTo: nil, bookmarkDataIsStale: &isStale)
+        }, inflateGzip: { data in
+            try GzipInflater.inflate(data)
         })
         self.provider = provider
         store = InMemorySourceStore(snapshot: snapshot, provider: provider)
@@ -173,6 +177,8 @@ final class AppModel: ObservableObject {
         }
         await store.remove(sourceID: sourceID)
         guides[sourceID] = nil
+        playableSources = playableSources.filter { $0.value != sourceID }
+        CatalogModel.shared.forget(sourceID: sourceID)
         await reloadFromStore()
     }
 
@@ -208,6 +214,20 @@ final class AppModel: ObservableObject {
         savePreferences()
     }
 
+    /// Remembers which source a movie, episode or archive programme came from (not in the library).
+    func registerPlayable(_ channelID: String, sourceID: String) {
+        playableSources[channelID] = sourceID
+    }
+
+    /// An Xtream client for `sourceID` with the password from the Keychain.
+    func xtreamClient(sourceID: String) throws -> XtreamClient {
+        guard let record = records.first(where: { $0.id == sourceID }),
+              case .xtream(let id, _, let account) = record.source else {
+            throw SourceStoreError.unknownSource
+        }
+        return try provider.xtreamClient(sourceID: id, account: account)
+    }
+
     func recordPlayed(_ channelID: String) {
         library.recordPlayed(channelID)
         savePreferences()
@@ -222,8 +242,14 @@ final class AppModel: ObservableObject {
 
     /// The source record a channel belongs to.
     func record(forChannelID channelID: String) -> SourceRecord? {
-        guard let sourceID = library.sourceID(forChannelID: channelID) else { return nil }
+        guard let sourceID = library.sourceID(forChannelID: channelID) ?? playableSources[channelID] else { return nil }
         return records.first { $0.id == sourceID }
+    }
+
+    /// The programme guide of the source a channel belongs to.
+    func guide(for channel: Channel) -> EPGStore? {
+        guard let sourceID = library.sourceID(forChannelID: channel.id) else { return nil }
+        return guides[sourceID]
     }
 
     /// "Now / next" for a channel, if its source has a guide.

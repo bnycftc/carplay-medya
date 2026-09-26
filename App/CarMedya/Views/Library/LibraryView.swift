@@ -15,6 +15,17 @@ struct LibraryView: View {
                 }
                 .searchable(text: $query, prompt: Text("Kanal ara"))
                 .refreshable { await model.refreshAll(force: true) }
+                .toolbar {
+                    if !model.guides.isEmpty {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            NavigationLink {
+                                GuideView()
+                            } label: {
+                                Label("Rehber", systemImage: "calendar")
+                            }
+                        }
+                    }
+                }
                 .nowPlayingInset()
         }
     }

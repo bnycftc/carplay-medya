@@ -6,6 +6,7 @@ struct CarMedyaApp: App {
     @StateObject private var model = AppModel.shared
     @StateObject private var playback = PlaybackController.shared
     @StateObject private var motion = MotionMonitor.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -13,6 +14,11 @@ struct CarMedyaApp: App {
                 .environmentObject(model)
                 .environmentObject(playback)
                 .environmentObject(motion)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background {
+                CatalogModel.shared.flush()
+            }
         }
     }
 }

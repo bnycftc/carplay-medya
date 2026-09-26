@@ -22,7 +22,7 @@ extension UserFacingError {
         case .unexpectedResponse:
             return String(localized: "Sunucu yanıtı anlaşılamadı.")
         case .compressedData:
-            return String(localized: "Sıkıştırılmış (gzip) dosyalar desteklenmiyor.")
+            return String(localized: "Sıkıştırılmış (gzip) kanal listeleri desteklenmiyor.")
         case .unsupported(let reason):
             return reason.message
         case .missingPassword:

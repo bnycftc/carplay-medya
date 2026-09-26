@@ -24,20 +24,25 @@ public protocol GuideProvider: Sendable {
 public struct DefaultPlaylistProvider: PlaylistProvider, GuideProvider {
     /// Resolves bookmark data stored in ``MediaSource/localFile(id:name:bookmark:)``.
     public typealias BookmarkResolver = @Sendable (Data) throws -> URL
+    /// Inflates a gzip file (`.xml.gz` guides). Foundation has no portable inflater, so the app injects one.
+    public typealias GzipInflater = @Sendable (Data) throws -> Data
 
     private let transport: any HTTPTransport
     private let credentials: any CredentialStore
     private let resolveBookmark: BookmarkResolver
+    private let inflateGzip: GzipInflater?
 
     /// Creates a provider.
     public init(
         transport: any HTTPTransport = URLSessionTransport(),
         credentials: any CredentialStore,
-        resolveBookmark: @escaping BookmarkResolver
+        resolveBookmark: @escaping BookmarkResolver,
+        inflateGzip: GzipInflater? = nil
     ) {
         self.transport = transport
         self.credentials = credentials
         self.resolveBookmark = resolveBookmark
+        self.inflateGzip = inflateGzip
     }
 
     // MARK: Playlists
@@ -128,7 +133,16 @@ public struct DefaultPlaylistProvider: PlaylistProvider, GuideProvider {
             throw CarMediaError.transport(UserFacingError.redactedDetail(of: error, secrets: secrets))
         }
         guard (200..<300).contains(response.statusCode) else { throw CarMediaError.httpStatus(response.statusCode) }
-        return try XMLTVParser.parse(data: data).makeStore()
+        var xml = data
+        if TextDecoding.isGzip(xml) {
+            guard let inflateGzip else { throw CarMediaError.compressedDataNotSupported }
+            do {
+                xml = try inflateGzip(xml)
+            } catch {
+                throw CarMediaError.compressedDataNotSupported
+            }
+        }
+        return try XMLTVParser.parse(data: xml).makeStore()
     }
 
     // MARK: Helpers

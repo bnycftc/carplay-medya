@@ -31,6 +31,8 @@ final class PlaybackController: ObservableObject {
     private var secrets: [String] = []
     private var artwork: UIImage?
     private var isSessionActive = false
+    /// Position to seek to once the current item is ready (continue watching).
+    private var pendingStart: TimeInterval?
     private let log = Logger(subsystem: "com.bnycftc.carmedya", category: "playback")
 
     private init() {
@@ -45,7 +47,10 @@ final class PlaybackController: ObservableObject {
     // MARK: Commands
 
     /// Starts `channel`. `queue` is the list it was picked from (next/previous and CarPlay skipping).
-    func play(_ channel: Channel, queue: [Channel] = [], presentPlayer: Bool = true) {
+    /// `startAt` resumes on-demand content at a saved position.
+    func play(_ channel: Channel, queue: [Channel] = [], presentPlayer: Bool = true, startAt: TimeInterval? = nil) {
+        saveProgressOfCurrentItem()
+        pendingStart = nil
         let model = AppModel.shared
         let record = model.record(forChannelID: channel.id)
         let isXtream = record?.source.isXtream ?? false
@@ -59,10 +64,15 @@ final class PlaybackController: ObservableObject {
             deactivateSession()
         case .playable(let request):
             state.begin(channel, request: request, queue: queue)
-            state.programmeTitle = model.epgSummary(for: channel, at: Date())?.now?.title
+            if channel.kind == .live {
+                state.programmeTitle = model.epgSummary(for: channel, at: Date())?.now?.title
+            }
+            pendingStart = request.isLive ? nil : startAt.flatMap { $0 > 0 ? $0 : nil }
             load(request)
         }
-        model.recordPlayed(channel.id)
+        if channel.kind == .live {
+            model.recordPlayed(channel.id)
+        }
         if presentPlayer {
             isPlayerPresented = true
         }
@@ -85,6 +95,8 @@ final class PlaybackController: ObservableObject {
     }
 
     func pause() {
+        saveProgressOfCurrentItem()
+        CatalogModel.shared.flush()
         player.pause()
         state.markPaused()
         deactivateSession()
@@ -96,6 +108,8 @@ final class PlaybackController: ObservableObject {
     }
 
     func stop() {
+        saveProgressOfCurrentItem()
+        CatalogModel.shared.flush()
         tearDownItem()
         state.stop()
         isPlayerPresented = false
@@ -161,8 +175,15 @@ final class PlaybackController: ObservableObject {
         item.publisher(for: \.status)
             .receive(on: DispatchQueue.main)
             .sink { [weak item] status in
-                guard status == .failed, let item else { return }
-                PlaybackController.shared.handleFailure(item.error)
+                guard let item else { return }
+                switch status {
+                case .failed:
+                    PlaybackController.shared.handleFailure(item.error)
+                case .readyToPlay:
+                    PlaybackController.shared.handleReadyToPlay()
+                default:
+                    break
+                }
             }
             .store(in: &itemObservers)
 
@@ -177,7 +198,7 @@ final class PlaybackController: ObservableObject {
         NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime, object: item)
             .receive(on: DispatchQueue.main)
             .sink { _ in
-                PlaybackController.shared.pause()
+                PlaybackController.shared.handleDidPlayToEnd()
             }
             .store(in: &itemObservers)
     }
@@ -236,6 +257,43 @@ final class PlaybackController: ObservableObject {
         guard state.isActive, !state.isLive else { return }
         let duration = player.currentItem?.duration.seconds
         state.updateTime(elapsed: seconds, duration: duration)
+        // Until the resume seek has happened the position is 0; recording it would be meaningless.
+        guard pendingStart == nil, let channel = state.channel, channel.kind != .live else { return }
+        CatalogModel.shared.recordProgress(
+            channelID: channel.id, position: seconds, duration: Self.finiteDuration(duration)
+        )
+    }
+
+    private func handleReadyToPlay() {
+        guard let start = pendingStart else { return }
+        pendingStart = nil
+        let duration = Self.finiteDuration(player.currentItem?.duration.seconds)
+        if let duration, start >= duration { return }
+        player.seek(to: CMTime(seconds: start, preferredTimescale: 600))
+    }
+
+    private func handleDidPlayToEnd() {
+        if let channel = state.channel, channel.kind != .live,
+           let duration = Self.finiteDuration(player.currentItem?.duration.seconds) {
+            CatalogModel.shared.recordProgress(channelID: channel.id, position: duration, duration: duration)
+        }
+        pause()
+    }
+
+    /// Records the current position of an on-demand item (before switching, pausing or stopping).
+    private func saveProgressOfCurrentItem() {
+        guard pendingStart == nil, let channel = state.channel, channel.kind != .live,
+              let item = player.currentItem else { return }
+        let position = item.currentTime().seconds
+        guard position.isFinite else { return }
+        CatalogModel.shared.recordProgress(
+            channelID: channel.id, position: position, duration: Self.finiteDuration(item.duration.seconds)
+        )
+    }
+
+    private static func finiteDuration(_ seconds: Double?) -> Double? {
+        guard let seconds, seconds.isFinite, seconds > 0 else { return nil }
+        return seconds
     }
 
     private func handleFailure(_ error: Error?) {

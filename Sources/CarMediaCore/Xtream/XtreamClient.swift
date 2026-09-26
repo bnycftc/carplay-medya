@@ -114,6 +114,11 @@ public struct XtreamClient: Sendable {
             let title = stream.name?.trimmingCharacters(in: .whitespaces) ?? ""
             let group = stream.categoryID.flatMap { names[$0] }.flatMap { $0.isEmpty ? nil : $0 }
             let epgID = stream.epgChannelID.flatMap { $0.isEmpty ? nil : $0 }
+            let hasArchive = stream.tvArchive ?? false
+            var attributes: [String: String] = [:]
+            if hasArchive, let days = stream.tvArchiveDuration, days > 0 {
+                attributes["catchup-days"] = String(days)
+            }
             return Channel(
                 id: StableID.make("xtream", host, user, "live", String(streamID)),
                 title: title.isEmpty ? "#\(streamID)" : title,
@@ -123,8 +128,9 @@ public struct XtreamClient: Sendable {
                 tvgID: epgID,
                 logo: stream.streamIcon.flatMap { $0.isEmpty ? nil : $0 },
                 channelNumber: stream.num,
-                catchup: (stream.tvArchive ?? false) ? "xc" : nil,
-                isRadio: stream.isRadio
+                catchup: hasArchive ? "xc" : nil,
+                isRadio: stream.isRadio,
+                attributes: attributes
             )
         }
     }

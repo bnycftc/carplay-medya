@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "tr",
   "strings": {
+    "%lld dk kaldı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min left"
+          }
+        }
+      }
+    },
     "%lld gün": {
       "localizations": {
         "en": {
@@ -55,6 +65,16 @@
         }
       }
     },
+    "Ada göre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By name"
+          }
+        }
+      }
+    },
     "Adres veya giriş bilgileri geçersiz.": {
       "localizations": {
         "en": {
@@ -105,6 +125,26 @@
         }
       }
     },
+    "Arşiv var": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive available"
+          }
+        }
+      }
+    },
+    "Arşivden izle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch from archive"
+          }
+        }
+      }
+    },
     "Ayarlar": {
       "localizations": {
         "en": {
@@ -141,6 +181,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Start"
+          }
+        }
+      }
+    },
+    "Baştan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start over"
+          }
+        }
+      }
+    },
+    "Baştan başlat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start over"
           }
         }
       }
@@ -205,6 +265,16 @@
         }
       }
     },
+    "Bu dizide bölüm yok.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This series has no episodes."
+          }
+        }
+      }
+    },
     "Bu dosya biçimi desteklenmiyor. HLS (.m3u8) veya MP4 kullanın.": {
       "localizations": {
         "en": {
@@ -235,6 +305,36 @@
         }
       }
     },
+    "Bu hesapta dizi yok.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account has no series."
+          }
+        }
+      }
+    },
+    "Bu hesapta film yok.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account has no movies."
+          }
+        }
+      }
+    },
+    "Bu kanal için program bilgisi yok.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No programme information for this channel."
+          }
+        }
+      }
+    },
     "Bu liste zaten ekli.": {
       "localizations": {
         "en": {
@@ -245,12 +345,52 @@
         }
       }
     },
+    "Bu program arşivden oynatılamıyor.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This programme can't be played from the archive."
+          }
+        }
+      }
+    },
     "Bu yayın protokolü desteklenmiyor.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "This streaming protocol is not supported."
+          }
+        }
+      }
+    },
+    "Bugün": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        }
+      }
+    },
+    "Bölümler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Episodes"
+          }
+        }
+      }
+    },
+    "Canlı izle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch live"
           }
         }
       }
@@ -295,6 +435,16 @@
         }
       }
     },
+    "Desteklenmeyen biçim": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsupported format"
+          }
+        }
+      }
+    },
     "Devam": {
       "localizations": {
         "en": {
@@ -305,12 +455,62 @@
         }
       }
     },
+    "Devam et": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        }
+      }
+    },
+    "Devam et (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue (%@)"
+          }
+        }
+      }
+    },
     "Devre dışı": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Disabled"
+          }
+        }
+      }
+    },
+    "Dizi ara": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search series"
+          }
+        }
+      }
+    },
+    "Diziler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Series"
+          }
+        }
+      }
+    },
+    "Diziler yükleniyor…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading series…"
           }
         }
       }
@@ -375,12 +575,32 @@
         }
       }
     },
+    "Dün": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yesterday"
+          }
+        }
+      }
+    },
     "Ekle": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Add"
+          }
+        }
+      }
+    },
+    "En yeni": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Newest"
           }
         }
       }
@@ -455,12 +675,92 @@
         }
       }
     },
+    "Film ara": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search movies"
+          }
+        }
+      }
+    },
+    "Film ve bölümlerde kaldığınız yerler ile izlendi işaretleri yalnızca bu cihazda tutulur.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume positions and watched marks for movies and episodes are stored only on this device."
+          }
+        }
+      }
+    },
+    "Film ve dizi yok": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No movies or series"
+          }
+        }
+      }
+    },
+    "Filmler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies"
+          }
+        }
+      }
+    },
+    "Filmler ve Diziler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies & Series"
+          }
+        }
+      }
+    },
+    "Filmler ve diziler Xtream hesaplarından gelir. Kaynaklar sekmesinden kendi hesabınızı ekleyin.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies and series come from Xtream accounts. Add your own account in the Sources tab."
+          }
+        }
+      }
+    },
+    "Filmler yükleniyor…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading movies…"
+          }
+        }
+      }
+    },
     "Gelişmiş": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Advanced"
+          }
+        }
+      }
+    },
+    "Geçmişi temizle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear history"
           }
         }
       }
@@ -525,6 +825,16 @@
         }
       }
     },
+    "Hesap": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account"
+          }
+        }
+      }
+    },
     "Hız 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. CarPlay ekranında video hiçbir zaman gösterilmez.": {
       "localizations": {
         "en": {
@@ -561,6 +871,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remaining"
+          }
+        }
+      }
+    },
+    "Kaldığınız yerden devam edilsin mi?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue where you left off?"
           }
         }
       }
@@ -641,6 +961,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Loading sources…"
+          }
+        }
+      }
+    },
+    "Kaynaklarınız program rehberi (EPG) sağlamıyor. M3U listesinde url-tvg adresi olmalı veya bir Xtream hesabı kullanılmalı.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your sources don't provide a programme guide (EPG). An M3U list needs a url-tvg address, or use an Xtream account."
           }
         }
       }
@@ -735,6 +1065,16 @@
         }
       }
     },
+    "Listeden kaldır": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from list"
+          }
+        }
+      }
+    },
     "M3U liste": {
       "localizations": {
         "en": {
@@ -795,6 +1135,16 @@
         }
       }
     },
+    "Oyuncular": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cast"
+          }
+        }
+      }
+    },
     "Parola": {
       "localizations": {
         "en": {
@@ -815,6 +1165,16 @@
         }
       }
     },
+    "Puana göre": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By rating"
+          }
+        }
+      }
+    },
     "RTSP/RTMP yayınları desteklenmiyor.": {
       "localizations": {
         "en": {
@@ -825,12 +1185,62 @@
         }
       }
     },
+    "Rehber": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guide"
+          }
+        }
+      }
+    },
+    "Rehber yok": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No guide"
+          }
+        }
+      }
+    },
     "Ses çalmaya devam ediyor.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Audio keeps playing."
+          }
+        }
+      }
+    },
+    "Sezon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season"
+          }
+        }
+      }
+    },
+    "Sezon %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Season %@"
+          }
+        }
+      }
+    },
+    "Seçenekler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
           }
         }
       }
@@ -1005,6 +1415,26 @@
         }
       }
     },
+    "Sıkıştırılmış (gzip) kanal listeleri desteklenmiyor.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compressed (gzip) channel lists are not supported."
+          }
+        }
+      }
+    },
+    "Sırala": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        }
+      }
+    },
     "Tamam": {
       "localizations": {
         "en": {
@@ -1051,6 +1481,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "All connections are in use; a new stream may be refused."
+          }
+        }
+      }
+    },
+    "Tümü": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        }
+      }
+    },
+    "Tür": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
           }
         }
       }
@@ -1145,12 +1595,42 @@
         }
       }
     },
+    "Yarın": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow"
+          }
+        }
+      }
+    },
+    "Yeniden dene": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        }
+      }
+    },
     "Yenile": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Refresh"
+          }
+        }
+      }
+    },
+    "Yönetmen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Director"
           }
         }
       }
@@ -1181,6 +1661,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next/previous buttons switch to the next or previous channel of the list it was started from."
+          }
+        }
+      }
+    },
+    "İzleme geçmişi silinsin mi?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete watch history?"
+          }
+        }
+      }
+    },
+    "İzleme geçmişini temizle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear watch history"
+          }
+        }
+      }
+    },
+    "İzlemeye devam": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue watching"
+          }
+        }
+      }
+    },
+    "İzlendi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watched"
           }
         }
       }
