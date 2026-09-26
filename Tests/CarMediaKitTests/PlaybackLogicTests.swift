@@ -25,9 +25,10 @@ final class MotionPolicyTests: XCTestCase {
         XCTAssertTrue(policy.isMoving)
     }
 
-    func testCarPlayWithoutSpeedIsTreatedAsMoving() {
+    func testCarPlayWithoutSpeedStillAllowsVideo() {
         var policy = MotionPolicy()
-        XCTAssertFalse(policy.update(carPlayConnected: true))
+        XCTAssertTrue(policy.update(carPlayConnected: true), "unknown speed (parked, no GPS fix) must not hide video")
+        XCTAssertTrue(policy.update(speed: -1))
         XCTAssertTrue(policy.update(speed: 0), "a valid standstill reading allows video")
         XCTAssertFalse(policy.update(speed: kmh(20)))
         XCTAssertTrue(policy.update(carPlayConnected: false), "disconnect resets the state")

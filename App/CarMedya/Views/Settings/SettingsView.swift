@@ -5,7 +5,7 @@ import UIKit
 struct SettingsView: View {
     @EnvironmentObject private var motion: MotionMonitor
     @EnvironmentObject private var playback: PlaybackController
-    @AppStorage(SettingsKeys.motionPolicyEnabled) private var motionPolicyEnabled = true
+    @AppStorage(SettingsKeys.motionPolicyEnabled) private var motionPolicyEnabled = false
     @AppStorage(SettingsKeys.channelSkipEnabled) private var channelSkipEnabled = true
     @AppStorage(SettingsKeys.onboardingCompleted) private var onboardingCompleted = false
     @Environment(\.openURL) private var openURL
@@ -26,7 +26,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Sürüş güvenliği")
                 } footer: {
-                    Text("Hız 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. CarPlay ekranında video hiçbir zaman gösterilmez.")
+                    Text("Açıksa, GPS hızı 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. Hız bilinmiyorsa video gösterilir. CarPlay ekranında bu sürümde yalnızca ses çalar.")
                 }
 
                 Section {

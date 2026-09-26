@@ -31,6 +31,8 @@ final class PlaybackController: ObservableObject {
     private var secrets: [String] = []
     private var artwork: UIImage?
     private var isSessionActive = false
+    /// Route-sharing policy of the active session: long-form video for movies/TV, long-form audio for radio.
+    private var sessionPolicy: AVAudioSession.RouteSharingPolicy = .longFormAudio
     /// Position to seek to once the current item is ready (continue watching).
     private var pendingStart: TimeInterval?
     private let log = Logger(subsystem: "com.bnycftc.carmedya", category: "playback")
@@ -161,6 +163,7 @@ final class PlaybackController: ObservableObject {
         let item = AVPlayerItem(asset: asset)
         observe(item)
         player.replaceCurrentItem(with: item)
+        sessionPolicy = request.isAudioOnly ? .longFormAudio : .longFormVideo
         activateSession()
         player.play()
     }
@@ -340,10 +343,16 @@ final class PlaybackController: ObservableObject {
     // MARK: Audio session
 
     private func activateSession() {
-        guard !isSessionActive else { return }
         let session = AVAudioSession.sharedInstance()
+        if isSessionActive {
+            // Switching between radio and video keeps the session active; only the policy may change.
+            if session.routeSharingPolicy != sessionPolicy {
+                try? session.setCategory(.playback, mode: .default, policy: sessionPolicy, options: [])
+            }
+            return
+        }
         do {
-            try session.setCategory(.playback, mode: .default, policy: .longFormAudio, options: [])
+            try session.setCategory(.playback, mode: .default, policy: sessionPolicy, options: [])
             try session.setActive(true)
             isSessionActive = true
         } catch {

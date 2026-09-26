@@ -22,7 +22,8 @@ final class MotionMonitor: NSObject, ObservableObject {
     private var consumers = 0
 
     private override init() {
-        let enabled = UserDefaults.standard.object(forKey: SettingsKeys.motionPolicyEnabled) as? Bool ?? true
+        // Opt-in (bny, 26 Sep 2026): the rule only hides phone video once the user turns it on.
+        let enabled = UserDefaults.standard.object(forKey: SettingsKeys.motionPolicyEnabled) as? Bool ?? false
         isEnabled = enabled
         policy = MotionPolicy(isEnabled: enabled)
         super.init()

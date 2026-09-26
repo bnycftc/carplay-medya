@@ -8,7 +8,9 @@ import Foundation
 /// - "moving" ends only once speed drops to ``stoppedThreshold`` (default 3 km/h) or below,
 ///   so GPS jitter around a single threshold does not flip the screen on and off,
 /// - invalid readings (negative speed, as `CLLocation.speed` reports when unknown) keep the current state,
-/// - when CarPlay is connected and no valid speed has been seen, the car is assumed to be moving.
+/// - video is hidden only when GPS has confirmed movement; an unknown speed (no location permission,
+///   no fix yet) never hides it, so a parked car with CarPlay connected still shows video on the phone.
+///   The car itself keeps video off the CarPlay screen while driving.
 public struct MotionPolicy: Sendable, Equatable {
     /// Speed (m/s) at or above which the vehicle counts as moving.
     public let movingThreshold: Double
@@ -42,9 +44,7 @@ public struct MotionPolicy: Sendable, Equatable {
     /// Whether video may be shown right now.
     public var allowsVideo: Bool {
         guard isEnabled else { return true }
-        if isMoving { return false }
-        if isCarPlayConnected && !hasSpeedReading { return false }
-        return true
+        return !isMoving
     }
 
     /// Feeds a speed reading in m/s. Negative or non-finite values mean "unknown" and are ignored.
