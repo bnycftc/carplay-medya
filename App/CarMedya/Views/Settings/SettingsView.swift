@@ -7,6 +7,7 @@ struct SettingsView: View {
     @EnvironmentObject private var playback: PlaybackController
     @AppStorage(SettingsKeys.motionPolicyEnabled) private var motionPolicyEnabled = false
     @AppStorage(SettingsKeys.channelSkipEnabled) private var channelSkipEnabled = true
+    @AppStorage(SettingsKeys.autoplayNextEpisode) private var autoplayNextEpisode = true
     @AppStorage(SettingsKeys.onboardingCompleted) private var onboardingCompleted = false
     @Environment(\.openURL) private var openURL
     @ObservedObject private var catalog = CatalogModel.shared
@@ -34,6 +35,7 @@ struct SettingsView: View {
                         .onChange(of: channelSkipEnabled) { _, enabled in
                             playback.setChannelSkipEnabled(enabled)
                         }
+                    Toggle("Bölüm bitince sonrakini oynat", isOn: $autoplayNextEpisode)
                 } header: {
                     Text("Oynatma")
                 } footer: {

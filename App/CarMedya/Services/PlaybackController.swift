@@ -96,7 +96,9 @@ final class PlaybackController: ObservableObject {
 
     func resume() {
         guard let channel = state.channel else { return }
-        if state.isFailed || player.currentItem == nil {
+        // A failed item or a live stream waiting to reconnect cannot just continue: reload it.
+        if state.isFailed || player.currentItem == nil || player.currentItem?.status == .failed
+            || (state.isLive && state.reconnectAttempt != nil) {
             play(channel, queue: state.queue, presentPlayer: false)
             return
         }
@@ -109,8 +111,13 @@ final class PlaybackController: ObservableObject {
     }
 
     func pause() {
+        let wasReconnecting = reconnectTask != nil
         cancelReconnect()
         saveProgressOfCurrentItem()
+        if wasReconnecting || player.currentItem?.status == .failed {
+            // Drop the dead item so `resume()` reloads the stream instead of playing nothing.
+            tearDownItem()
+        }
         CatalogModel.shared.flush()
         player.pause()
         state.markPaused()
@@ -319,6 +326,14 @@ final class PlaybackController: ObservableObject {
         if let channel = state.channel, channel.kind != .live,
            let duration = Self.finiteDuration(player.currentItem?.duration.seconds) {
             CatalogModel.shared.recordProgress(channelID: channel.id, position: duration, duration: duration)
+        }
+        if UserDefaults.standard.object(forKey: SettingsKeys.autoplayNextEpisode) as? Bool ?? true,
+           let channel = state.channel, channel.kind == .series,
+           let next = state.nextChannelWithoutWrap, next.kind == .series, next.id != channel.id {
+            CatalogModel.shared.flush()
+            play(next, queue: state.queue, presentPlayer: false,
+                 startAt: CatalogModel.shared.continueWatching.resumePosition(for: next.id))
+            return
         }
         pause()
     }

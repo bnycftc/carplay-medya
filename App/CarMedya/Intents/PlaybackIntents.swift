@@ -151,8 +151,10 @@ enum IntentSupport {
     /// from Siri must fetch them before a channel can be found.
     static func ensureLibraryLoaded() async {
         let model = AppModel.shared
-        let needsXtream = model.records.contains { $0.source.isXtream }
-            && !model.library.allChannels.contains { model.record(forChannelID: $0.id)?.source.isXtream == true }
+        // An Xtream record counts as loaded when its library section has groups.
+        let loadedSectionIDs = Set(model.library.sections.filter { !$0.groups.isEmpty }.map(\.id))
+        let xtreamIDs = model.records.filter { $0.source.isXtream }.map(\.id)
+        let needsXtream = !xtreamIDs.isEmpty && !xtreamIDs.contains { loadedSectionIDs.contains($0) }
         if model.library.isEmpty || needsXtream {
             await model.refreshAll(force: false)
         }

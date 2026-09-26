@@ -188,4 +188,14 @@ final class NowPlayingStateTests: XCTestCase {
         state.begin(a, request: liveRequest(a), queue: [b, c])
         XCTAssertNil(state.nextChannel, "a queue that does not contain the channel is replaced by the channel alone")
     }
+
+    func testNextWithoutWrapStopsAtTheEnd() {
+        var state = NowPlayingState()
+        state.begin(a, request: liveRequest(a), queue: [a, b, c])
+        XCTAssertEqual(state.nextChannelWithoutWrap?.id, b.id)
+        state.begin(c, request: liveRequest(c), queue: [a, b, c])
+        XCTAssertNil(state.nextChannelWithoutWrap, "the last item has no next one")
+        state.begin(a, request: liveRequest(a), queue: [a])
+        XCTAssertNil(state.nextChannelWithoutWrap)
+    }
 }

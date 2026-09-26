@@ -145,6 +145,13 @@ public struct NowPlayingState: Sendable, Equatable {
     /// The channel before the current one in the queue (wrapping around).
     public var previousChannel: Channel? { neighbor(offset: -1) }
 
+    /// The channel after the current one in the queue, or `nil` at the end (no wrap-around).
+    public var nextChannelWithoutWrap: Channel? {
+        guard let channel, let index = queue.firstIndex(where: { $0.id == channel.id }),
+              index + 1 < queue.count else { return nil }
+        return queue[index + 1]
+    }
+
     private func neighbor(offset: Int) -> Channel? {
         guard let channel, queue.count > 1, let index = queue.firstIndex(where: { $0.id == channel.id }) else {
             return nil

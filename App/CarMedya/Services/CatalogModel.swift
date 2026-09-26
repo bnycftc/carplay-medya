@@ -25,8 +25,11 @@ final class CatalogModel: ObservableObject {
     }
 
     @Published private(set) var states: [Key: LoadState] = [:]
+    /// Published copy for views; updated on saves and structural changes, not on every progress tick.
     @Published private(set) var continueWatching: ContinueWatching
 
+    /// Working copy updated about once a second while playing.
+    private var pending: ContinueWatching
     private var targets: [String: WatchTarget] = [:]
     private var serverTimeZones: [String: TimeZone] = [:]
     private let file: SnapshotFile<ContinueWatching>
@@ -41,8 +44,9 @@ final class CatalogModel: ObservableObject {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("CarMedya", isDirectory: true)
         file = SnapshotFile<ContinueWatching>(url: support.appendingPathComponent("continue-watching.json"))
-        continueWatching = (try? file.load()) ?? ContinueWatching()
-        for entry in continueWatching.entries {
+        pending = (try? file.load()) ?? ContinueWatching()
+        continueWatching = pending
+        for entry in pending.entries {
             targets[entry.id] = entry.target
         }
     }
@@ -110,8 +114,9 @@ final class CatalogModel: ObservableObject {
     /// Forgets catalogs and progress of a removed source.
     func forget(sourceID: String) {
         states = states.filter { $0.key.sourceID != sourceID }
-        continueWatching.removeAll(sourceID: sourceID)
+        pending.removeAll(sourceID: sourceID)
         targets = targets.filter { $0.value.sourceID != sourceID }
+        isDirty = true
         save(force: true)
     }
 
@@ -134,7 +139,11 @@ final class CatalogModel: ObservableObject {
 
     /// Builds the playable for a target (URL from the Keychain-held password).
     func channel(for target: WatchTarget) throws -> Channel {
-        let client = try AppModel.shared.xtreamClient(sourceID: target.sourceID)
+        try channel(for: target, client: AppModel.shared.xtreamClient(sourceID: target.sourceID))
+    }
+
+    /// Same as ``channel(for:)`` with an already built client (one Keychain read per source).
+    private func channel(for target: WatchTarget, client: XtreamClient) -> Channel {
         let url: URL
         let title: String
         let group: String?
@@ -164,9 +173,17 @@ final class CatalogModel: ObservableObject {
     }
 
     /// Whether AVPlayer can play the target at all (MKV, AVI… cannot).
+    /// Decided from the container extension alone (no Keychain read), with the same rules as playback.
     func unsupportedReason(for target: WatchTarget) -> UnsupportedReason? {
-        guard let channel = try? channel(for: target) else { return nil }
-        if case .unsupported(let reason) = PlaybackURLResolver().resolve(channel, isXtreamSource: true) {
+        // Mirrors `XtreamEndpoints.sanitizedExtension`: missing or unusable extensions play as mp4.
+        let cleaned = (target.containerExtension ?? "").lowercased().filter { $0.isASCII && ($0.isLetter || $0.isNumber) }
+        let ext = cleaned.isEmpty ? "mp4" : cleaned
+        let kind: StreamKind = target.kind == .movie ? .movie : .series
+        guard let url = URL(string: "http://x/\(target.kind == .movie ? "movie" : "series")/u/p/1.\(ext)") else {
+            return nil
+        }
+        let probe = Channel(id: target.playableID, title: target.title, streamURL: url, kind: kind)
+        if case .unsupported(let reason) = PlaybackURLResolver().resolve(probe, isXtreamSource: true) {
             return reason
         }
         return nil
@@ -175,9 +192,19 @@ final class CatalogModel: ObservableObject {
     /// Plays a movie or episode, optionally from the saved position.
     func play(_ target: WatchTarget, resume: Bool, queue: [WatchTarget] = []) {
         do {
-            let channel = try channel(for: target)
-            let queueChannels = queue.compactMap { try? self.channel(for: $0) }
-            let start = resume ? continueWatching.resumePosition(for: target.playableID) : nil
+            // One client (Keychain read) per source; queue items normally share the target's source.
+            var clients: [String: XtreamClient] = [:]
+            let client = try AppModel.shared.xtreamClient(sourceID: target.sourceID)
+            clients[target.sourceID] = client
+            let channel = channel(for: target, client: client)
+            let queueChannels = queue.compactMap { item -> Channel? in
+                if clients[item.sourceID] == nil {
+                    clients[item.sourceID] = try? AppModel.shared.xtreamClient(sourceID: item.sourceID)
+                }
+                guard let client = clients[item.sourceID] else { return nil }
+                return self.channel(for: item, client: client)
+            }
+            let start = resume ? pending.resumePosition(for: target.playableID) : nil
             PlaybackController.shared.play(channel, queue: queueChannels, startAt: start)
         } catch {
             log.error("Cannot build playable: \(String(describing: UserFacingError.from(error)), privacy: .public)")
@@ -189,8 +216,12 @@ final class CatalogModel: ObservableObject {
     /// Called by the player about once a second for on-demand items.
     func recordProgress(channelID: String, position: Double, duration: Double?) {
         guard let target = targets[channelID], let duration else { return }
-        if continueWatching.record(target, position: position, duration: duration) {
+        let before = (pending.entries.map(\.id), pending.watchedIDs.count, pending.watchedIDs.last)
+        if pending.record(target, position: position, duration: duration) {
             isDirty = true
+            let after = (pending.entries.map(\.id), pending.watchedIDs.count, pending.watchedIDs.last)
+            // Added, reordered, finished or dropped: show it now; plain position updates wait for the save.
+            if before != after { publish() }
             save(force: false)
         }
     }
@@ -198,19 +229,24 @@ final class CatalogModel: ObservableObject {
     /// Writes pending progress (pause, stop, background).
     func flush() {
         save(force: true)
+        publish()
     }
 
     func removeProgress(id: String) {
-        if continueWatching.remove(id: id) {
+        if pending.remove(id: id) {
             isDirty = true
             save(force: true)
         }
     }
 
     func clearHistory() {
-        continueWatching.clear()
+        pending.clear()
         isDirty = true
         save(force: true)
+    }
+
+    private func publish() {
+        if continueWatching != pending { continueWatching = pending }
     }
 
     private func save(force: Bool) {
@@ -219,8 +255,9 @@ final class CatalogModel: ObservableObject {
         guard force || now.timeIntervalSince(lastSave) >= saveInterval else { return }
         lastSave = now
         isDirty = false
+        publish()
         do {
-            try file.save(continueWatching)
+            try file.save(pending)
         } catch {
             log.error("Saving continue-watching failed")
         }

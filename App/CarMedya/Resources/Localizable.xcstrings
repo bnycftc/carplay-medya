@@ -485,6 +485,16 @@
         }
       }
     },
+    "Bölüm bitince sonrakini oynat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play the next episode when one ends"
+          }
+        }
+      }
+    },
     "Bölümler": {
       "localizations": {
         "en": {

@@ -9,6 +9,7 @@ struct MovieDetailView: View {
     @State private var details: XtreamVODDetails?
     @State private var containerOverride: String?
     @State private var isLoading = true
+    @State private var unsupported: UnsupportedReason?
 
     private var target: WatchTarget {
         var target = catalog.movieTarget(item)
@@ -46,7 +47,7 @@ struct MovieDetailView: View {
                     }
                 }
 
-                if let reason = catalog.unsupportedReason(for: target) {
+                if let reason = unsupported {
                     Label(reason.message, systemImage: "exclamationmark.triangle.fill")
                         .font(.footnote)
                         .foregroundStyle(.orange)
@@ -82,6 +83,9 @@ struct MovieDetailView: View {
             if let ext = info.movieData?.containerExtension.flatMap(nonEmpty) {
                 containerOverride = ext
             }
+        }
+        .task(id: target.containerExtension) {
+            unsupported = catalog.unsupportedReason(for: target)
         }
     }
 
