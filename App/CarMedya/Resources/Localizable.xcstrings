@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "tr",
   "strings": {
+    "%@ açılıyor.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening %@."
+          }
+        }
+      }
+    },
     "%lld dk kaldı": {
       "localizations": {
         "en": {
@@ -101,6 +111,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Active"
+          }
+        }
+      }
+    },
+    "Ana Sayfa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
           }
         }
       }
@@ -335,6 +355,16 @@
         }
       }
     },
+    "Bu kanal artık kaynaklarınızda yok.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This channel is no longer in your sources."
+          }
+        }
+      }
+    },
     "Bu kanal için program bilgisi yok.": {
       "localizations": {
         "en": {
@@ -391,6 +421,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Episodes"
+          }
+        }
+      }
+    },
+    "Canlı TV": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live TV"
+          }
+        }
+      }
+    },
+    "Canlı TV'de bir kanalı sola kaydırarak favorilere ekleyin; burada ve CarPlay'de görünür.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe left on a channel in Live TV to add it to favorites; it appears here and in CarPlay."
           }
         }
       }
@@ -605,6 +655,16 @@
         }
       }
     },
+    "En son oynatılan kanalı yeniden açar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reopens the most recently played channel."
+          }
+        }
+      }
+    },
     "En yeni": {
       "localizations": {
         "en": {
@@ -641,6 +701,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No favorite channels"
+          }
+        }
+      }
+    },
+    "Favori kanallar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Favorite channels"
           }
         }
       }
@@ -835,6 +905,16 @@
         }
       }
     },
+    "Henüz oynatılmış bir kanal yok.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No channel has been played yet."
+          }
+        }
+      }
+    },
     "Hesabın parolası bulunamadı. Kaynağı silip yeniden ekleyin.": {
       "localizations": {
         "en": {
@@ -905,12 +985,32 @@
         }
       }
     },
+    "Kanal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Channel"
+          }
+        }
+      }
+    },
     "Kanal ara": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Search channels"
+          }
+        }
+      }
+    },
+    "Kanal oynat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play channel"
           }
         }
       }
@@ -991,6 +1091,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your sources don't provide a programme guide (EPG). An M3U list needs a url-tvg address, or use an Xtream account."
+          }
+        }
+      }
+    },
+    "Kendi kaynaklarınızdaki bir kanalı oynatır.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plays a channel from your own sources."
           }
         }
       }
@@ -1155,6 +1265,16 @@
         }
       }
     },
+    "Oynatmayı durdur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop playback"
+          }
+        }
+      }
+    },
     "Oyuncular": {
       "localizations": {
         "en": {
@@ -1281,6 +1401,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recently Played"
+          }
+        }
+      }
+    },
+    "Son izlenenler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently watched"
+          }
+        }
+      }
+    },
+    "Son kanal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last channel"
+          }
+        }
+      }
+    },
+    "Son kanalı oynat": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play last channel"
           }
         }
       }
@@ -1555,6 +1705,16 @@
         }
       }
     },
+    "Uygulama içerik sağlamaz. Kaynaklar sekmesinden kendi M3U listenizi, Xtream hesabınızı veya bir dosyayı ekleyin.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app provides no content. Add your own M3U list, Xtream account or a file in the Sources tab."
+          }
+        }
+      }
+    },
     "Uygulama içerik sağlamaz. Kaynaklar sekmesinden kendi listenizi, hesabınızı veya dosyanızı ekleyin.": {
       "localizations": {
         "en": {
@@ -1631,6 +1791,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tomorrow"
+          }
+        }
+      }
+    },
+    "Yeni diziler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New series"
+          }
+        }
+      }
+    },
+    "Yeni filmler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New movies"
           }
         }
       }
@@ -1735,6 +1915,16 @@
         }
       }
     },
+    "İzlenecek bir şey yok": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to watch"
+          }
+        }
+      }
+    },
     "İçe aktarılamadı": {
       "localizations": {
         "en": {
@@ -1771,6 +1961,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "We provide no content. The app does not contain, host or recommend channels, lists or streams. It only plays sources you add and have the right to use."
+          }
+        }
+      }
+    },
+    "Şimdi oynuyor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now playing"
           }
         }
       }

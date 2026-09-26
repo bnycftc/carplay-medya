@@ -9,7 +9,7 @@ struct LibraryView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Kütüphane")
+                .navigationTitle("Canlı TV")
                 .navigationDestination(for: String.self) { groupID in
                     GroupChannelsView(groupID: groupID)
                 }

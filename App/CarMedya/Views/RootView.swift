@@ -7,12 +7,12 @@ struct RootView: View {
 
     var body: some View {
         TabView {
+            HomeView()
+                .tabItem { Label("Ana Sayfa", systemImage: "house") }
             LibraryView()
-                .tabItem { Label("Kütüphane", systemImage: "rectangle.stack") }
+                .tabItem { Label("Canlı TV", systemImage: "play.tv") }
             CatalogView()
                 .tabItem { Label("Filmler ve Diziler", systemImage: "film.stack") }
-            FavoritesView()
-                .tabItem { Label("Favoriler", systemImage: "star") }
             SourcesView()
                 .tabItem { Label("Kaynaklar", systemImage: "antenna.radiowaves.left.and.right") }
             SettingsView()

@@ -2,21 +2,20 @@ import CarMediaCore
 import CarMediaKit
 import SwiftUI
 
+/// Favorites and recents, editable. Pushed from the home screen ("Tümü").
 struct FavoritesView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var playback: PlaybackController
 
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle("Favoriler")
-                .toolbar {
-                    if !model.library.favorites.isEmpty {
-                        EditButton()
-                    }
+        content
+            .navigationTitle("Favoriler")
+            .toolbar {
+                if !model.library.favorites.isEmpty {
+                    EditButton()
                 }
-                .nowPlayingInset()
-        }
+            }
+            .nowPlayingInset()
     }
 
     @ViewBuilder
