@@ -9,6 +9,9 @@
   - Rehber: Kütüphane sağ üstte "Rehber"; EPG'li kanallar, dün–yarın program listesi, arşivli kanallarda geçmiş programı "Arşivden izle" (Xtream timeshift HLS; M3U catchup default/append/shift/flussonic).
   - `.xml.gz` rehberler açılıyor (gzip çerçevesi Core'da, açma App'te `NSData.decompressed(.zlib)`).
   - Ayarlar: izleme geçmişini temizle.
+- **0.2.1**: CarPlay bağlıyken telefonda video gizlenmesi düzeltildi (hız bilinmiyorsa video görünür, hareket kuralı varsayılan kapalı); video içerikte ses oturumu `.longFormVideo`.
+- **0.3.0 TestFlight'ta**: Ana Sayfa sekmesi (şimdi oynuyor, izlemeye devam, favori kanallar, son izlenenler, yeni film/dizi) ve Siri komutları ("CarMedya'da <kanal> aç", "son kanalı aç", "durdur").
+- EV3 testi (26 Eylül): arabada ses var, görüntü yok — beklenen (yalnız CarPlay Audio yetkisi; resmi video için Apple video yetkisi + Kia desteği gerekli, Kia henüz açmadı). bny kutu (AI box) yolunu istemedi; uygulama üzerinden devam kararı.
 - Testler: Core 95, Kit 59 (Windows + macOS CI yeşil); iOS derleme ve TestFlight yeşil.
 - Çalışma modu: orkestrasyon kapalı, oturum doğrudan Opus 5.5 ile yürüyor (bny kararı 26 Eylül).
 
