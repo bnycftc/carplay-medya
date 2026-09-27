@@ -465,6 +465,16 @@
         }
       }
     },
+    "Bu listedeki kanallar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Channels in this list"
+          }
+        }
+      }
+    },
     "Bu program arşivden oynatılamıyor.": {
       "localizations": {
         "en": {
@@ -1811,6 +1821,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compressed (gzip) channel lists are not supported."
+          }
+        }
+      }
+    },
+    "Sıradakiler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up next"
           }
         }
       }

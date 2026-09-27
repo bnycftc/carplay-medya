@@ -36,6 +36,10 @@ struct PlayerScreen: View {
                     controls(state)
                 }
                 .padding()
+
+                if state.queue.count > 1 {
+                    InlineQueueList(queue: state.queue, currentID: state.channel?.id)
+                }
             }
         }
         .background(Color(uiColor: .systemBackground))
@@ -297,5 +301,59 @@ struct ChannelSwitcherSheet: View {
                 }
             }
         }
+    }
+}
+
+
+/// The list the channel was opened from, shown under the controls: tap to switch without leaving the player.
+struct InlineQueueList: View {
+    let queue: [Channel]
+    let currentID: String?
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var playback: PlaybackController
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text(queue.first?.kind == .live ? "Bu listedeki kanallar" : "Sıradakiler")
+                    .font(.headline)
+                Spacer()
+                Text(verbatim: "\(queue.count)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+
+            TimelineView(.everyMinute) { context in
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(queue) { channel in
+                        Button {
+                            if channel.id != currentID {
+                                playback.play(channel, queue: queue, presentPlayer: true)
+                            }
+                        } label: {
+                            ChannelRow(
+                                title: channel.title,
+                                logoURL: channel.logoURL,
+                                isRadio: channel.isRadio,
+                                summary: channel.kind == .live ? model.epgSummary(for: channel, at: context.date) : nil,
+                                isFavorite: model.isFavorite(channel.id),
+                                isCurrent: channel.id == currentID
+                            )
+                            .padding(.horizontal)
+                            .padding(.vertical, 6)
+                            .background(channel.id == currentID ? Color.accentColor.opacity(0.08) : Color.clear)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .id(channel.id)
+                        Divider().padding(.leading, 72)
+                    }
+                }
+            }
+        }
+        .padding(.bottom)
     }
 }
