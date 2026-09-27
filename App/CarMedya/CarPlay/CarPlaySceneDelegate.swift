@@ -212,8 +212,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func makeItem(_ channel: Channel, queue: [Channel]) -> CPListItem {
         let summary = AppModel.shared.epgSummary(for: channel, at: Date())
         let detail = summary?.now?.title ?? channel.groupTitle
-        let placeholder = UIImage(systemName: channel.isRadio ? "radio" : "tv")
-        let item = CPListItem(text: channel.title, detailText: detail, image: placeholder)
+        let item = CPListItem(text: channel.title, detailText: detail, image: ArtworkRenderer.artwork(logo: nil, title: channel.title, side: Self.itemImageSide))
         item.isPlaying = PlaybackController.shared.state.channel?.id == channel.id
         item.handler = { [weak self] _, completion in
             self?.play(channel, queue: queue)
@@ -225,15 +224,21 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     private func loadLogo(for channel: Channel, into item: CPListItem) {
         guard let url = channel.logoURL else { return }
+        let title = channel.title
         if let cached = ImageLoader.shared.cachedImage(for: url) {
-            item.setImage(cached)
+            item.setImage(ArtworkRenderer.artwork(logo: cached, title: title, side: Self.itemImageSide))
             return
         }
         let side = max(CPListItem.maximumImageSize.width, CPListItem.maximumImageSize.height)
         Task { [weak item] in
             guard let image = await ImageLoader.shared.image(for: url, maxPixelSize: side) else { return }
-            item?.setImage(image)
+            item?.setImage(ArtworkRenderer.artwork(logo: image, title: title, side: Self.itemImageSide))
         }
+    }
+
+    /// List row artwork in pixels (rendered at scale 1): the largest CarPlay row image at 3×.
+    private static var itemImageSide: CGFloat {
+        max(CPListItem.maximumImageSize.width, CPListItem.maximumImageSize.height) * 3
     }
 
     // MARK: Playback

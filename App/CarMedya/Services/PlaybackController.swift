@@ -90,7 +90,6 @@ final class PlaybackController: ObservableObject {
         if presentPlayer {
             isPlayerPresented = true
         }
-        publishNowPlaying()
         loadArtwork(for: channel)
     }
 
@@ -477,12 +476,16 @@ final class PlaybackController: ObservableObject {
         nowPlaying.update(state, artwork: artwork)
     }
 
+    /// Always publishes artwork (initials first), so CarPlay never falls back to its generic icon;
+    /// the channel logo replaces it once loaded.
     private func loadArtwork(for channel: Channel) {
+        artwork = ArtworkRenderer.artwork(logo: nil, title: channel.title)
+        publishNowPlaying()
         guard let url = channel.logoURL else { return }
         Task {
-            let image = await ImageLoader.shared.image(for: url, maxPixelSize: 300)
-            guard state.channel?.id == channel.id else { return }
-            artwork = image
+            guard let logo = await ImageLoader.shared.image(for: url, maxPixelSize: 200),
+                  state.channel?.id == channel.id else { return }
+            artwork = ArtworkRenderer.artwork(logo: logo, title: channel.title)
             publishNowPlaying()
         }
     }
