@@ -5,7 +5,9 @@ import os
 
 /// Movies, series, "continue watching" and archive playback for Xtream accounts.
 ///
-/// Catalogs are loaded on demand (they can be large) and kept in memory only. Stream URLs contain the
+/// Catalogs are loaded on demand (they can be large) and cached on disk as ``CatalogSnapshot`` files
+/// (items and category names only), shown instantly and refreshed in the background when older than
+/// ``catalogMaxAge``. Stream URLs contain the
 /// account password, so nothing here persists URLs: continue-watching entries store Xtream ids and the
 /// URL is rebuilt from the Keychain-held password when played.
 @MainActor
@@ -25,6 +27,8 @@ final class CatalogModel: ObservableObject {
     }
 
     @Published private(set) var states: [Key: LoadState] = [:]
+    /// Catalogs being refreshed in the background while a cached copy is shown.
+    @Published private(set) var refreshingKeys: Set<Key> = []
     /// Published copy for views; updated on saves and structural changes, not on every progress tick.
     @Published private(set) var continueWatching: ContinueWatching
 
@@ -39,11 +43,15 @@ final class CatalogModel: ObservableObject {
 
     /// Minimum interval between progress writes while playing.
     private let saveInterval: TimeInterval = 15
+    /// Cached catalogs older than this are refreshed in the background.
+    private let catalogMaxAge: TimeInterval = 6 * 3600
+    private let cacheDirectory: URL
 
     private init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("CarMedya", isDirectory: true)
         file = SnapshotFile<ContinueWatching>(url: support.appendingPathComponent("continue-watching.json"))
+        cacheDirectory = support.appendingPathComponent("Catalogs", isDirectory: true)
         pending = (try? file.load()) ?? ContinueWatching()
         continueWatching = pending
         for entry in pending.entries {
@@ -64,42 +72,104 @@ final class CatalogModel: ObservableObject {
         states[Key(sourceID: sourceID, kind: kind)] ?? .idle
     }
 
-    /// Loads a catalog unless it is already loaded (or loading).
+    /// Loads a catalog: from memory, else from the disk cache (shown at once), else from the server.
+    /// A cache older than ``catalogMaxAge`` (or `force`) is refreshed in the background; if that fails
+    /// the cached copy stays on screen.
     func load(sourceID: String, kind: CatalogKind, force: Bool = false) async {
         let key = Key(sourceID: sourceID, kind: kind)
-        switch states[key] {
-        case .loading?:
-            return
-        case .loaded?:
+        guard !refreshingKeys.contains(key) else { return }
+        if case .loading? = states[key] { return }
+
+        var hasCopy = false
+        if case .loaded? = states[key] {
+            hasCopy = true
             if !force { return }
-        default:
-            break
-        }
-        states[key] = .loading
-        do {
-            let client = try AppModel.shared.xtreamClient(sourceID: sourceID)
-            let catalog: VODCatalog
-            switch kind {
-            case .movie:
-                async let categories = client.vodCategories()
-                let streams = try await client.vodStreams()
-                let names = (try? await categories) ?? []
-                catalog = await Task.detached(priority: .userInitiated) {
-                    VODCatalog.movies(sourceID: sourceID, streams: streams, categories: names)
-                }.value
-            case .series:
-                async let categories = client.seriesCategories()
-                let list = try await client.series()
-                let names = (try? await categories) ?? []
-                catalog = await Task.detached(priority: .userInitiated) {
-                    VODCatalog.series(sourceID: sourceID, list: list, categories: names)
-                }.value
+        } else if let snapshot = await readCache(key) {
+            if let cached = snapshot.catalog {
+                states[key] = .loaded(cached)
+                hasCopy = true
+                if !force && !snapshot.isStale(at: Date(), maxAge: catalogMaxAge) { return }
             }
+        }
+
+        if hasCopy {
+            refreshingKeys.insert(key)
+        } else {
+            states[key] = .loading
+        }
+        defer { refreshingKeys.remove(key) }
+        do {
+            let catalog = try await download(sourceID: sourceID, kind: kind)
             states[key] = .loaded(catalog)
+            writeCache(catalog, key: key)
         } catch {
             let failure = UserFacingError.from(error)
             log.error("Catalog load failed: \(String(describing: failure), privacy: .public)")
-            states[key] = .failed(failure)
+            if !hasCopy {
+                states[key] = .failed(failure)
+            }
+        }
+    }
+
+    private func download(sourceID: String, kind: CatalogKind) async throws -> VODCatalog {
+        let client = try AppModel.shared.xtreamClient(sourceID: sourceID)
+        switch kind {
+        case .movie:
+            async let categories = client.vodCategories()
+            let streams = try await client.vodStreams()
+            let names = (try? await categories) ?? []
+            return await Task.detached(priority: .userInitiated) {
+                VODCatalog.movies(sourceID: sourceID, streams: streams, categories: names)
+            }.value
+        case .series:
+            async let categories = client.seriesCategories()
+            let list = try await client.series()
+            let names = (try? await categories) ?? []
+            return await Task.detached(priority: .userInitiated) {
+                VODCatalog.series(sourceID: sourceID, list: list, categories: names)
+            }.value
+        }
+    }
+
+    // MARK: Disk cache
+
+    private func cacheFile(_ key: Key) -> SnapshotFile<CatalogSnapshot> {
+        SnapshotFile(url: cacheDirectory.appendingPathComponent("\(key.sourceID)-\(key.kind.rawValue).json"))
+    }
+
+    /// Reads a cached catalog off the main thread; a corrupt file is deleted.
+    private func readCache(_ key: Key) async -> CatalogSnapshot? {
+        let file = cacheFile(key)
+        return await Task.detached(priority: .userInitiated) { () -> CatalogSnapshot? in
+            do {
+                return try file.load()
+            } catch {
+                try? file.delete()
+                return nil
+            }
+        }.value
+    }
+
+    private func writeCache(_ catalog: VODCatalog, key: Key) {
+        let file = cacheFile(key)
+        let directory = cacheDirectory
+        let snapshot = CatalogSnapshot(catalog: catalog, savedAt: Date())
+        Task.detached(priority: .utility) {
+            do {
+                try file.save(snapshot)
+                var values = URLResourceValues()
+                values.isExcludedFromBackup = true
+                var url = directory
+                try? url.setResourceValues(values)
+            } catch {
+                // A missing cache only costs a download next time.
+            }
+        }
+    }
+
+    private func deleteCache(sourceID: String) {
+        for kind in CatalogKind.allCases {
+            try? cacheFile(Key(sourceID: sourceID, kind: kind)).delete()
         }
     }
 
@@ -114,6 +184,7 @@ final class CatalogModel: ObservableObject {
     /// Forgets catalogs and progress of a removed source.
     func forget(sourceID: String) {
         states = states.filter { $0.key.sourceID != sourceID }
+        deleteCache(sourceID: sourceID)
         pending.removeAll(sourceID: sourceID)
         targets = targets.filter { $0.value.sourceID != sourceID }
         isDirty = true

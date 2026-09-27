@@ -252,3 +252,45 @@ public struct VODCatalog: Sendable {
         return nil
     }
 }
+
+// MARK: - Disk cache
+
+/// A catalog as stored on disk: items and category names only (no stream URLs, no passwords).
+public struct CatalogSnapshot: Sendable, Codable, Equatable {
+    /// Bump when the format changes; older files are ignored.
+    public static let currentVersion = 1
+
+    /// A category id and name.
+    public struct Category: Sendable, Codable, Equatable {
+        public var id: String
+        public var name: String
+    }
+
+    /// Format version.
+    public var version: Int
+    /// When the catalog was downloaded.
+    public var savedAt: Date
+    /// Items in server order.
+    public var items: [CatalogItem]
+    /// Categories in server order.
+    public var categories: [Category]
+
+    /// Creates a snapshot of `catalog`.
+    public init(catalog: VODCatalog, savedAt: Date) {
+        version = Self.currentVersion
+        self.savedAt = savedAt
+        items = catalog.items
+        categories = catalog.categories.map { Category(id: $0.id, name: $0.name) }
+    }
+
+    /// The catalog, or `nil` if the snapshot was written by an incompatible version.
+    public var catalog: VODCatalog? {
+        guard version == Self.currentVersion else { return nil }
+        return VODCatalog(items: items, categories: categories.map { (id: $0.id, name: $0.name) })
+    }
+
+    /// Whether the snapshot is older than `maxAge` at `date`.
+    public func isStale(at date: Date, maxAge: TimeInterval) -> Bool {
+        date.timeIntervalSince(savedAt) > maxAge || savedAt > date.addingTimeInterval(60)
+    }
+}

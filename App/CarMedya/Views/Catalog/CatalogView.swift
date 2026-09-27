@@ -95,6 +95,15 @@ struct CatalogView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.top, 40)
             } else {
+                if catalog.refreshingKeys.contains(CatalogModel.Key(sourceID: source.id, kind: kind)) {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text("Güncelleniyor…")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                }
                 if !loaded.categories.isEmpty {
                     CategoryChips(categories: loaded.categories, selection: $categoryID)
                 }

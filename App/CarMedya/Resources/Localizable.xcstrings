@@ -195,6 +195,16 @@
         }
       }
     },
+    "A–Z": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A–Z"
+          }
+        }
+      }
+    },
     "Bağlantı": {
       "localizations": {
         "en": {
@@ -971,6 +981,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Turn on the groups you want to see. Search also finds hidden groups."
+          }
+        }
+      }
+    },
+    "Güncelleniyor…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updating…"
           }
         }
       }

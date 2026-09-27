@@ -15,6 +15,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var favoritesTemplate: CPListTemplate?
     private var channelsTemplate: CPListTemplate?
     private var recentsTemplate: CPListTemplate?
+    private var alphabetTemplate: CPListTemplate?
     private var cancellables = Set<AnyCancellable>()
     private var lastAlertedFailure: String?
 
@@ -44,11 +45,19 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             systemImage: "clock",
             emptyTitle: String(localized: "Henüz bir şey oynatılmadı")
         )
+        let alphabet = makeListTemplate(
+            title: String(localized: "A–Z"),
+            systemImage: "textformat.abc",
+            emptyTitle: String(localized: "Kanal yok")
+        )
         favoritesTemplate = favorites
         channelsTemplate = channels
         recentsTemplate = recents
+        alphabetTemplate = alphabet
 
-        let tabs: [CPTemplate] = [favorites, channels, recents]
+        // Audio apps get at most four tabs; finding a channel by letter replaces keyboard search,
+        // which CarPlay audio apps do not have (voice search goes through Siri, see PlaybackIntents).
+        let tabs: [CPTemplate] = [favorites, channels, alphabet, recents]
         if #available(iOS 27, *) {
             // TODO(v1.1): Search tab for the iOS 27 CarPlay audio/video templates (plan §3 v1.1).
             // Deliberately empty: do not reference iOS 27 CarPlay symbols until they are verified
@@ -70,6 +79,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         favoritesTemplate = nil
         channelsTemplate = nil
         recentsTemplate = nil
+        alphabetTemplate = nil
         MotionMonitor.shared.setCarPlayConnected(false)
     }
 
@@ -143,6 +153,36 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 sectionIndexTitle: nil
             )
         })
+
+        reloadAlphabet(library: library)
+    }
+
+    /// A–Z tab: one row per letter; a letter opens its channels (capped to the car's list limit).
+    private func reloadAlphabet(library: LibraryState) {
+        let buckets = AlphabetIndex.buckets(library.visibleChannels)
+        let rows = ListCapping.cap(buckets, maxItems: CPListTemplate.maximumItemCount)
+        alphabetTemplate?.updateSections([CPListSection(items: rows.map { bucket in
+            let item = CPListItem(text: bucket.letter, detailText: String(localized: "\(bucket.channels.count) kanal"))
+            item.accessoryType = .disclosureIndicator
+            let letter = bucket.letter
+            item.handler = { [weak self] _, completion in
+                self?.showLetter(letter)
+                completion()
+            }
+            return item
+        })])
+    }
+
+    private func showLetter(_ letter: String) {
+        guard let interfaceController else { return }
+        let bucket = AlphabetIndex.buckets(AppModel.shared.library.visibleChannels).first { $0.letter == letter }
+        let channels = ListCapping.cap(bucket?.channels ?? [], maxItems: CPListTemplate.maximumItemCount)
+        let template = CPListTemplate(
+            title: letter,
+            sections: [CPListSection(items: channels.map { makeItem($0, queue: channels) })]
+        )
+        template.emptyViewTitleVariants = [String(localized: "Kanal yok")]
+        interfaceController.pushTemplate(template, animated: true, completion: nil)
     }
 
     private func makeGroupItem(_ group: LibraryGroup, library: LibraryState) -> CPListItem {
