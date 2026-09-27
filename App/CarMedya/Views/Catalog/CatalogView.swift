@@ -12,6 +12,7 @@ struct CatalogView: View {
     @State private var categoryID: String?
     @State private var sort: CatalogSort = .recentlyAdded
     @State private var query = ""
+    @State private var addsSource = false
 
     private var records: [SourceRecord] { catalog.xtreamRecords }
 
@@ -29,6 +30,9 @@ struct CatalogView: View {
                     case .movie: MovieDetailView(item: item)
                     case .series: SeriesDetailView(item: item)
                     }
+                }
+                .navigationDestination(for: SampleItem.self) { item in
+                    SampleDetailView(item: item)
                 }
                 .nowPlayingInset()
         }
@@ -61,11 +65,31 @@ struct CatalogView: View {
                 await catalog.load(sourceID: source.id, kind: kind)
             }
         } else {
-            ContentUnavailableView {
-                Label("Film ve dizi yok", systemImage: "film.stack")
-            } description: {
-                Text("Filmler ve diziler Xtream hesaplarından gelir. Kaynaklar sekmesinden kendi hesabınızı ekleyin.")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Kendi film ve dizilerin burada", systemImage: "film.stack")
+                            .font(.headline)
+                        Text("Filmler ve diziler Xtream hesabından gelir. Sağlayıcının verdiği bağlantıyı yapıştırman yeterli; o zamana kadar ücretsiz örnekleri izleyebilirsin.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            addsSource = true
+                        } label: {
+                            Label("Bağlantı yapıştır", systemImage: "doc.on.clipboard")
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .padding(16)
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color(uiColor: .secondarySystemBackground)))
+                    .padding(.horizontal)
+
+                    SampleGrid()
+                }
+                .padding(.vertical)
             }
+            .sheet(isPresented: $addsSource) { QuickAddSourceView() }
         }
     }
 

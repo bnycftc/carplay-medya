@@ -135,6 +135,16 @@
         }
       }
     },
+    "Ana sayfada ücretsiz örnekleri göster": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show free samples on Home"
+          }
+        }
+      }
+    },
     "Araç hareket halindeyken video gösterilmez, yalnız ses çalar. CarPlay'de kanallar sesli oynatılır.": {
       "localizations": {
         "en": {
@@ -385,6 +395,16 @@
         }
       }
     },
+    "Bu grupta kanal yok": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No channels in this group"
+          }
+        }
+      }
+    },
     "Bu hesap zaten ekli.": {
       "localizations": {
         "en": {
@@ -571,6 +591,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "CarMedya starts empty. The app contains and recommends no channels, lists or streams."
+          }
+        }
+      }
+    },
+    "CarMedya kanal, liste veya yayın sağlamaz. Aşağıdaki örnek videolar, hak sahiplerinin serbest lisansıyla ve kendi sunucularından oynatılır.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CarMedya provides no channels, lists or broadcasts. The sample videos below are played under their owners' open licenses, from the owners' own servers."
+          }
+        }
+      }
+    },
+    "CarMedya'ya hoş geldin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome to CarMedya"
           }
         }
       }
@@ -915,6 +955,16 @@
         }
       }
     },
+    "Filmler ve diziler Xtream hesabından gelir. Sağlayıcının verdiği bağlantıyı yapıştırman yeterli; o zamana kadar ücretsiz örnekleri izleyebilirsin.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies and series come from an Xtream account. Just paste the link from your provider; until then you can watch the free samples."
+          }
+        }
+      }
+    },
     "Filmler ve diziler Xtream hesaplarından gelir. Kaynaklar sekmesinden kendi hesabınızı ekleyin.": {
       "localizations": {
         "en": {
@@ -1185,6 +1235,16 @@
         }
       }
     },
+    "Kanal, film, dizi ara": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search channels, movies, series"
+          }
+        }
+      }
+    },
     "Kanallar": {
       "localizations": {
         "en": {
@@ -1201,6 +1261,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Close"
+          }
+        }
+      }
+    },
+    "Kaynak": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source"
           }
         }
       }
@@ -1251,6 +1321,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your sources don't provide a programme guide (EPG). An M3U list needs a url-tvg address, or use an Xtream account."
+          }
+        }
+      }
+    },
+    "Kendi IPTV bağlantını, Xtream hesabını veya dosyanı ekle; kanalların, filmlerin ve dizilerin burada toplanır, arabada CarPlay'den dinlersin. Denemek için aşağıdaki ücretsiz filmlerden birini açabilirsin.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add your own IPTV link, Xtream account or file; your channels, movies and series gather here and play through CarPlay in the car. To try it out, open one of the free films below."
+          }
+        }
+      }
+    },
+    "Kendi film ve dizilerin burada": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your movies and series live here"
           }
         }
       }
@@ -1341,6 +1431,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Library"
+          }
+        }
+      }
+    },
+    "Lisans": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "License"
+          }
+        }
+      }
+    },
+    "Lisanslar ve kaynaklar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licenses and sources"
           }
         }
       }
@@ -1541,6 +1651,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No guide"
+          }
+        }
+      }
+    },
+    "Sağlayıcının verdiği IPTV bağlantısını veya Xtream bilgilerini yapıştır; kanallar burada gruplarıyla görünür.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste the IPTV link or Xtream details from your provider; channels appear here with their groups."
           }
         }
       }
@@ -2181,6 +2301,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Previous channel"
+          }
+        }
+      }
+    },
+    "Ücretsiz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free"
+          }
+        }
+      }
+    },
+    "Ücretsiz ve yasal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free and legal"
+          }
+        }
+      }
+    },
+    "Ücretsiz örnekler": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free samples"
           }
         }
       }

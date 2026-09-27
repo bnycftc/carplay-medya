@@ -2,13 +2,17 @@ import CarMediaCore
 import CarMediaKit
 import SwiftUI
 
-/// "Ana Sayfa": everything ready to watch, one tap away.
+/// "Ana Sayfa": everything ready to watch, one tap away, plus one search box for the whole app.
 struct HomeView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var playback: PlaybackController
     @ObservedObject private var catalog = CatalogModel.shared
+    @AppStorage(SettingsKeys.showSamples) private var showSamples = true
+    @State private var query = ""
+    @State private var addsSource = false
 
     private var firstXtream: SourceRecord? { catalog.xtreamRecords.first }
+    private var hasOwnContent: Bool { !model.records.isEmpty }
 
     var body: some View {
         NavigationStack {
@@ -20,27 +24,43 @@ struct HomeView: View {
                     case .series: SeriesDetailView(item: item)
                     }
                 }
+                .navigationDestination(for: SampleItem.self) { item in
+                    SampleDetailView(item: item)
+                }
+                .searchable(text: $query, prompt: Text("Kanal, film, dizi ara"))
                 .refreshable { await model.refreshAll(force: true) }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            addsSource = true
+                        } label: {
+                            Label("Kaynak ekle", systemImage: "plus")
+                        }
+                    }
+                }
+                .sheet(isPresented: $addsSource) { QuickAddSourceView() }
                 .nowPlayingInset()
         }
     }
 
     @ViewBuilder
     private var content: some View {
-        if model.library.isEmpty && firstXtream == nil && catalog.continueWatching.entries.isEmpty {
-            if model.refreshingSourceIDs.isEmpty {
-                ContentUnavailableView {
-                    Label("İzlenecek bir şey yok", systemImage: "play.tv")
-                } description: {
-                    Text("Uygulama içerik sağlamaz. Kaynaklar sekmesinden kendi M3U listenizi, Xtream hesabınızı veya bir dosyayı ekleyin.")
-                }
-            } else {
-                ProgressView("Kaynaklar yükleniyor…")
-            }
+        if !query.trimmingCharacters(in: .whitespaces).isEmpty {
+            HomeSearchResults(query: query)
         } else {
             TimelineView(.everyMinute) { context in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
+                        if !hasOwnContent {
+                            WelcomeCard { addsSource = true }
+                                .padding(.horizontal)
+                        } else if !model.refreshingSourceIDs.isEmpty && model.library.isEmpty {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                Text("Kaynaklar yükleniyor…").foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal)
+                        }
                         if let channel = playback.state.channel, playback.state.isActive {
                             NowWatchingCard(channel: channel, state: playback.state)
                                 .padding(.horizontal)
@@ -70,6 +90,9 @@ struct HomeView: View {
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal)
+                        }
+                        if showSamples || !hasOwnContent {
+                            SampleShelves()
                         }
                     }
                     .padding(.vertical)
@@ -237,5 +260,107 @@ struct NowWatchingCard: View {
                 .fill(Color(uiColor: .secondarySystemBackground)))
         }
         .buttonStyle(.plain)
+    }
+}
+
+
+/// First-run card: what the app is and how to start.
+struct WelcomeCard: View {
+    let addSource: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("CarMedya'ya hoş geldin", systemImage: "play.tv.fill")
+                .font(.title3.weight(.bold))
+            Text("Kendi IPTV bağlantını, Xtream hesabını veya dosyanı ekle; kanalların, filmlerin ve dizilerin burada toplanır, arabada CarPlay'den dinlersin. Denemek için aşağıdaki ücretsiz filmlerden birini açabilirsin.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Button(action: addSource) {
+                Label("Bağlantı yapıştır", systemImage: "doc.on.clipboard")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(Color(uiColor: .secondarySystemBackground)))
+    }
+}
+
+/// One search for channels, movies, series and samples.
+struct HomeSearchResults: View {
+    let query: String
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var playback: PlaybackController
+    @ObservedObject private var catalog = CatalogModel.shared
+
+    var body: some View {
+        let channels = model.library.search(query, limit: 30)
+        let movies = loadedItems(.movie)
+        let series = loadedItems(.series)
+        let samples = SampleLibrary.content.search(query)
+        TimelineView(.everyMinute) { context in
+            List {
+                if channels.isEmpty && movies.isEmpty && series.isEmpty && samples.isEmpty {
+                    Text("Sonuç bulunamadı").foregroundStyle(.secondary)
+                }
+                if !channels.isEmpty {
+                    Section("Kanallar") {
+                        ChannelRows(channels: channels, date: context.date)
+                    }
+                }
+                if !movies.isEmpty {
+                    Section("Filmler") {
+                        ForEach(movies) { item in catalogRow(item) }
+                    }
+                }
+                if !series.isEmpty {
+                    Section("Diziler") {
+                        ForEach(series) { item in catalogRow(item) }
+                    }
+                }
+                if !samples.isEmpty {
+                    Section("Ücretsiz örnekler") {
+                        ForEach(samples) { item in
+                            NavigationLink(value: item) {
+                                resultRow(title: item.title, detail: String(item.year), poster: item.posterURL, symbol: "film")
+                            }
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+        }
+    }
+
+    private func loadedItems(_ kind: CatalogKind) -> [CatalogItem] {
+        var result: [CatalogItem] = []
+        for record in catalog.xtreamRecords {
+            if case .loaded(let loaded) = catalog.state(sourceID: record.id, kind: kind) {
+                result += loaded.items(query: query, sort: .name).prefix(20)
+            }
+        }
+        return Array(result.prefix(20))
+    }
+
+    private func catalogRow(_ item: CatalogItem) -> some View {
+        NavigationLink(value: item) {
+            resultRow(title: item.title, detail: item.year ?? item.ratingText.map { "★ \($0)" },
+                      poster: item.posterURL, symbol: item.kind == .movie ? "film" : "tv")
+        }
+    }
+
+    private func resultRow(title: String, detail: String?, poster: URL?, symbol: String) -> some View {
+        HStack(spacing: 12) {
+            PosterView(url: poster, symbol: symbol)
+                .frame(width: 40)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: title).lineLimit(2)
+                if let detail {
+                    Text(verbatim: detail).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 }

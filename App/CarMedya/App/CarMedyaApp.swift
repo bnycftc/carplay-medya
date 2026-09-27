@@ -28,6 +28,7 @@ enum SettingsKeys {
     static let onboardingCompleted = "onboardingCompleted"
     static let motionPolicyEnabled = "motionPolicyEnabled"
     static let channelSkipEnabled = "channelSkipEnabled"
+    static let showSamples = "showSamples"
     static let autoplayNextEpisode = "autoplayNextEpisode"
 }
 

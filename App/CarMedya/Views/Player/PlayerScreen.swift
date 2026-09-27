@@ -8,24 +8,49 @@ struct PlayerScreen: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var motion: MotionMonitor
     @State private var showsChannelList = false
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     var body: some View {
         let state = playback.state
-        VStack(spacing: 0) {
-            header(state)
-            ZStack {
-                Color.black
-                if state.isAudioOnly {
-                    audioArtwork(state)
-                } else {
-                    VideoPlayerView(player: playback.player, allowsPictureInPicture: motion.allowsVideo)
-                    if !motion.allowsVideo {
-                        drivingCover
-                    }
+        Group {
+            if verticalSizeClass == .compact && !state.isAudioOnly {
+                // Phone turned sideways: video only, edge to edge. Turning back restores the full screen.
+                videoArea(state)
+                    .ignoresSafeArea()
+                    .statusBarHidden(true)
+                    .persistentSystemOverlays(.hidden)
+            } else {
+                portrait(state)
+            }
+        }
+        .sheet(isPresented: $showsChannelList) {
+            ChannelSwitcherSheet()
+                .presentationDetents([.medium, .large])
+        }
+        .onAppear { motion.beginMonitoring() }
+        .onDisappear { motion.endMonitoring() }
+    }
+
+    private func videoArea(_ state: NowPlayingState) -> some View {
+        ZStack {
+            Color.black
+            if state.isAudioOnly {
+                audioArtwork(state)
+            } else {
+                VideoPlayerView(player: playback.player, allowsPictureInPicture: motion.allowsVideo)
+                if !motion.allowsVideo {
+                    drivingCover
                 }
             }
-            .aspectRatio(16.0 / 9.0, contentMode: .fit)
-            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func portrait(_ state: NowPlayingState) -> some View {
+        VStack(spacing: 0) {
+            header(state)
+            videoArea(state)
+                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                .frame(maxWidth: .infinity)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -43,12 +68,6 @@ struct PlayerScreen: View {
             }
         }
         .background(Color(uiColor: .systemBackground))
-        .sheet(isPresented: $showsChannelList) {
-            ChannelSwitcherSheet()
-                .presentationDetents([.medium, .large])
-        }
-        .onAppear { motion.beginMonitoring() }
-        .onDisappear { motion.endMonitoring() }
     }
 
     // MARK: Parts

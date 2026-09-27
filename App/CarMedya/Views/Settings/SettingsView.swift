@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKeys.motionPolicyEnabled) private var motionPolicyEnabled = false
     @AppStorage(SettingsKeys.channelSkipEnabled) private var channelSkipEnabled = true
     @AppStorage(SettingsKeys.autoplayNextEpisode) private var autoplayNextEpisode = true
+    @AppStorage(SettingsKeys.showSamples) private var showSamples = true
     @AppStorage(SettingsKeys.onboardingCompleted) private var onboardingCompleted = false
     @Environment(\.openURL) private var openURL
     @ObservedObject private var catalog = CatalogModel.shared
@@ -70,6 +71,12 @@ struct SettingsView: View {
                         onboardingCompleted = false
                     } label: {
                         Label("Tanıtımı yeniden göster", systemImage: "sparkles")
+                    }
+                    Toggle("Ana sayfada ücretsiz örnekleri göster", isOn: $showSamples)
+                    NavigationLink {
+                        LicensesView()
+                    } label: {
+                        Label("Lisanslar ve kaynaklar", systemImage: "doc.text")
                     }
                 } header: {
                     Text("Hakkında")
