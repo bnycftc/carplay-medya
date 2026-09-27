@@ -202,8 +202,9 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           [ -n "${ASC_KEY_PATH:-}" ] && [ -f "$ASC_KEY_PATH" ] || { echo "API key not installed; nothing to revoke"; exit 0; }
-          python3 -m pip install --quiet --disable-pip-version-check pyjwt cryptography
-          python3 - <<'PY'
+          python3 -m venv "$RUNNER_TEMP/asc-venv"
+          "$RUNNER_TEMP/asc-venv/bin/pip" install --quiet --disable-pip-version-check pyjwt cryptography
+          "$RUNNER_TEMP/asc-venv/bin/python" - <<'PY'
           import json, os, time, urllib.request, jwt
           key = open(os.environ["ASC_KEY_PATH"]).read()
           def auth():
