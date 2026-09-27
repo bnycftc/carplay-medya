@@ -117,7 +117,6 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
             2>&1 | tee build/archive.log | xcbeautify
 
@@ -191,6 +190,39 @@ jobs:
             build/*.xcdistributionlogs
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Revoke CI development certificates
+        # Automatic signing creates an "Apple Development: Created via API" certificate on every fresh
+        # runner; its private key dies with the runner. Revoke them so the account never hits Apple's
+        # certificate limit. Distribution certificates are never touched.
+        if: always()
+        continue-on-error: true
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          [ -n "${ASC_KEY_PATH:-}" ] && [ -f "$ASC_KEY_PATH" ] || { echo "API key not installed; nothing to revoke"; exit 0; }
+          python3 -m pip install --quiet --disable-pip-version-check pyjwt cryptography
+          python3 - <<'PY'
+          import json, os, time, urllib.request, jwt
+          key = open(os.environ["ASC_KEY_PATH"]).read()
+          def auth():
+              now = int(time.time())
+              token = jwt.encode({"iss": os.environ["ASC_ISSUER_ID"], "iat": now, "exp": now + 600,
+                                  "aud": "appstoreconnect-v1"}, key, algorithm="ES256",
+                                 headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"})
+              return {"Authorization": "Bearer " + token}
+          base = "https://api.appstoreconnect.apple.com/v1/certificates"
+          req = urllib.request.Request(base + "?limit=200&filter[certificateType]=DEVELOPMENT,IOS_DEVELOPMENT"
+                                       "&fields[certificates]=displayName,name,certificateType", headers=auth())
+          for cert in json.load(urllib.request.urlopen(req, timeout=30))["data"]:
+              attrs = cert["attributes"]
+              if (attrs.get("displayName") or attrs.get("name")) != "Created via API":
+                  continue
+              delete = urllib.request.Request(base + "/" + cert["id"], method="DELETE", headers=auth())
+              urllib.request.urlopen(delete, timeout=30)
+              print("revoked CI development certificate", cert["id"])
+          PY
 
       - name: Remove API key and signing keychain
         if: always()
