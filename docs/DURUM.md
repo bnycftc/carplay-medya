@@ -1,4 +1,12 @@
-# Durum — 2026-09-26
+# Durum — 2026-09-28
+
+## DONDURULDU (2026-09-28, bny kararı)
+- **Neden:** bny'nin hedefi gelir; projenin tek gerçek farkı arabada videoydu ve bu bugün meşru yoldan imkânsız. iOS 27 resmi CarPlay videosu = `com.apple.developer.carplay-video` + CarPlay tarama şablonları + görüntü AirPlay video ile, yalnız park halinde ve araç üreticisinin "video in car" (MFi) desteğiyle. 17 Eylül 2026 itibarıyla hiçbir üretici desteklemiyor (Kia EV3 dahil). CarTV'nin arabadaki görüntüsü CarPlay bağlantısı üzerinden ekran yansıtma; iOS 27.2'de kırılıyor. Telefonda görüntü sorunsuz (bny doğruladı).
+- **Yeni özellik yazılmaz.** Uygulama TestFlight'ta 0.6.1 (17) olarak kalır.
+- **Yeniden başlatma tetikleri:** (a) Apple CarPlay Video yetkisi cevabı (Case 22408601), (b) herhangi bir üretici, özellikle Kia, CarPlay "video in car" desteğini açarsa, (c) EV3'te "Car Video Check" (App Store id6812248899) araç ekranında görünürse.
+- **Otomatik kontrol:** masaüstü uygulamasında `carmedya-watch` zamanlanmış görevi (Pzt ve Per 10:00) Gmail'de Apple cevabını ve haberlerde üretici desteğini arar; bulursa BnyOS'a önem 5 kayıt düşer ve bildirim gönderir.
+- **Yetki gelince ilk iş:** entitlement'ı geri ekle, `CPSessionConfiguration.supportsVideoPlayback` ile video sekmesi + `CPPlaybackConfiguration`, AirPlay video (`allowsExternalPlayback`) doğrula, CarPlay Simulator video yapılandırmasında test et.
+
 
 ## Nerede kaldık (2026-09-26)
 - **Faz 1-3 cihazda doğrulandı** (0.1.0 (5), iPhone iOS 27.0).
@@ -17,6 +25,8 @@
 - **0.5.1 TestFlight'ta** (27 Eylül): oynatıcının altında kanal listesi (bny'nin ekran görüntüsündeki isteği). CI tuzağı çözüldü: otomatik imzalama her koşuda 'Created via API' geliştirme sertifikası üretip hesabı sınıra dayandırmıştı; 11 eski sertifika iptal edildi, iş akışı artık her koşu sonunda bunları API ile iptal ediyor (dağıtım sertifikası Q9GHLHVX8G korunuyor).
 - **Varsayılan içerik araştırması (27 Eylül):** güvenli seçenek yalnız kendi sunucumuzda barındırılan küratörlü liste — Blender açık filmleri (CC-BY), NASA video arşivi (kamu malı), isteğe bağlı TR+ABD'de kamu malı olduğu doğrulanmış sessiz filmler. Canlı TV kanalları (TRT, DW, Euronews vb.) üçüncü taraf uygulamaya izin vermiyor; archive.org canlı API'si 'yalnız araştırma' şartlı ve etiketleri güvenilmez; Radio Browser App Review'da 5.2.3 reddi geçmişi var. bny kararı bekleniyor.
 - EV3 testi (26 Eylül): arabada ses var, görüntü yok — beklenen (yalnız CarPlay Audio yetkisi; resmi video için Apple video yetkisi + Kia desteği gerekli, Kia henüz açmadı). bny kutu (AI box) yolunu istemedi; uygulama üzerinden devam kararı.
+- **0.6.0 TestFlight'ta** (27 Eylül): ücretsiz örnek paket (Blender + NASA), Ana Sayfa hoş geldin kartı ve arama, Canlı TV grup çipleri, yatay tam ekran oynatıcı, Lisanslar ekranı.
+- **0.6.1 (17) TestFlight'ta** (27 Eylül): CarPlay ve kilit ekranında kanal logosu her zaman görünür (logo yoksa baş harfler; şeffaf logo zıt zeminde). Arabada doğrulanmadı.
 - Testler: Core 95, Kit 59 (Windows + macOS CI yeşil); iOS derleme ve TestFlight yeşil.
 - Çalışma modu: orkestrasyon kapalı, oturum doğrudan Opus 5.5 ile yürüyor (bny kararı 26 Eylül).
 
