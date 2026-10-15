@@ -18,7 +18,7 @@
 
 
 ## Nerede kaldık (2026-10-15)
-- **0.7.0 (hazırlanıyor, 2026-10-15):** iOS 27 CarPlay video üstverisi (`supportsVideoPlayback` + `CPPlaybackConfiguration`), "Park halinde araç ekranında video" ayarı (varsayılan kapalı), telefonda tarayıcı, tanılama logları, CI xcode-27 runner'ı + Xcode 27.0 sabitleme, TestFlight'ta ses-yalnız entitlement doğrulaması. Ayrıntı yukarıda. Henüz TestFlight'a yüklenmedi.
+- **0.7.0 (18) TestFlight'ta (2026-10-15, commit 55af2e8, TestFlight run 38782211156):** iOS 27 CarPlay video üstverisi (`supportsVideoPlayback` + `CPPlaybackConfiguration`), "Park halinde araç ekranında video" ayarı (varsayılan kapalı), telefonda tarayıcı, tanılama logları, CI xcode-27 runner'ı + Xcode 27.0 sabitleme, TestFlight'ta ses-yalnız entitlement doğrulaması. Ayrıntı yukarıda. CI'da Xcode 27.0 (27A266a) / iOS 27.0 SDK / Swift 6.4 ile derlendi; paket testleri macOS + Windows yeşil (Windows 189 test). İmzalı uygulamada yalnız `carplay-audio` doğrulandı. Arabada denenmedi.
 - **Faz 1-3 cihazda doğrulandı** (0.1.0 (5), iPhone iOS 27.0).
 - **Faz 4 tamam, 0.2.0 (8) TestFlight'a yüklendi** (Apple'da işleniyor, "Dahili Test" grubuna otomatik düşer):
   - "Filmler ve Diziler" sekmesi: Xtream film/dizi kataloğu, poster ızgarası, kategori çipleri, arama, sıralama.
@@ -54,6 +54,7 @@
 ## Kararlar
 - **Yalnız `carplay-audio` (2026-10-15):** `carplay-video` verildi ama kullanılmıyor — videosuz araçta (EV3) uygulama kaybolurdu; Apple Guide ses kategorisinde ses+video karışımına AirPlay video şartıyla izin veriyor. Ayrıntı "YENİDEN BAŞLADI" bölümünde.
 - Ekran yansıtma **eklenmeyecek** (navigasyon yetkisini yanlış beyanla almak gerekir; Apple emsalleri kapattı). bny istemeye devam ediyor; CarTV iOS 27.0 + EV3'te çalışıyor, 27.2 betada kırık. CarTV kendi App Store sayfasına göre tüm iPhone ekranını yansıtıyor (2026-10-15 incelemesi); reddi sürüyor.
+- **Depo herkese açık (2026-10-15, bny kararı):** hesapta ödeme yöntemi yok; ekimde etut'un macOS koşuları ücretsiz kotayı bitirince özel depoda Actions durdu. Açmadan önce 31 commit'lik geçmiş tarandı (anahtar/parola/Issuer ID yok; secret'lar GitHub'da). bny ileride yeniden gizleyebilir; o zaman Actions yine ücretsiz kotaya bağlı olur. Bu makinede Swift araç zinciri yok; doğrulama CI'da.
 - Bulut imzalama bu hesapta çalışmıyor (takım adında "Ç"); saklı Apple Distribution sertifikası kullanılıyor. Anahtar ve p12: `C:\Users\bny\.carmedya-signing\` (repo dışı).
 
 ## Hızlı komutlar
