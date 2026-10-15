@@ -262,6 +262,7 @@ final class PlaybackController: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { active in
                 PlaybackController.shared.log.info("external playback active: \(active, privacy: .public)")
+                CarVideoDiagnostics.shared.recordExternalPlayback(active)
             }
             .store(in: &observers)
 

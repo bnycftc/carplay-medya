@@ -47,6 +47,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         MotionMonitor.shared.setCarPlayConnected(true)
         AppModel.shared.start()
         sessionConfig = CPSessionConfiguration(delegate: self)
+        let carSupportsVideo = carSupportsVideoNow
+        CarVideoDiagnostics.shared.recordConnect(systemSupportsAPI: carSupportsVideo != nil, carSupportsVideo: carSupportsVideo)
         configureNowPlayingTemplate()
 
         let favorites = makeListTemplate(
@@ -83,6 +85,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         observeModel()
         reloadAll(library: AppModel.shared.library)
+        // `supportsVideoPlayback` may not be final when the rows are first built and has no change callback:
+        // read it again shortly after connecting so the first tap already gets the video row.
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            self?.refreshPlaybackConfigurations()
+        }
     }
 
     func templateApplicationScene(
@@ -98,6 +106,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         recentsTemplate = nil
         alphabetTemplate = nil
         MotionMonitor.shared.setCarPlayConnected(false)
+        CarVideoDiagnostics.shared.recordDisconnect()
     }
 
     // MARK: CPSessionConfigurationDelegate
@@ -106,14 +115,16 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         _ sessionConfiguration: CPSessionConfiguration,
         limitedUserInterfacesChanged limitedUserInterfaces: CPLimitableUserInterface
     ) {
-        // No behaviour: the configuration is owned only to read `supportsVideoPlayback`.
+        // CarPlay has no callback for `supportsVideoPlayback` itself; any configuration change re-reads it.
+        refreshPlaybackConfigurations()
     }
 
     func sessionConfiguration(
         _ sessionConfiguration: CPSessionConfiguration,
         contentStyleChanged contentStyle: CPContentStyle
     ) {
-        // No behaviour: the configuration is owned only to read `supportsVideoPlayback`.
+        // CarPlay has no callback for `supportsVideoPlayback` itself; any configuration change re-reads it.
+        refreshPlaybackConfigurations()
     }
 
     // MARK: Templates
@@ -281,14 +292,17 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         return item
     }
 
+    /// `CPSessionConfiguration.supportsVideoPlayback` right now; nil before iOS 27 or without a session.
+    private var carSupportsVideoNow: Bool? {
+        guard #available(iOS 27, *), let config = sessionConfig else { return nil }
+        return config.supportsVideoPlayback
+    }
+
     /// Whether the connected car supports video (iOS 27 only) and the user allows it (Settings).
-    /// `supportsVideoPlayback` is re-read on every refresh (playback state / settings change); CarPlay offers
-    /// no callback for it in the verified API, so a capability change takes effect at the next refresh.
+    /// `supportsVideoPlayback` is re-read on every refresh (playback state / settings change / session
+    /// configuration callbacks / 2 s after connecting); CarPlay offers no callback for the property itself.
     private var presentationPolicy: CarPresentationPolicy {
-        var carSupportsVideo = false
-        if #available(iOS 27, *), let config = sessionConfig {
-            carSupportsVideo = config.supportsVideoPlayback
-        }
+        let carSupportsVideo: Bool = carSupportsVideoNow ?? false
         // Off unless the user turns on "Park halinde araç ekranında video" (bny, 2026-10-15).
         let userAllowsVideoInCar = UserDefaults.standard.object(forKey: SettingsKeys.carVideoEnabled) as? Bool ?? false
         return CarPresentationPolicy(carSupportsVideo: carSupportsVideo, userAllowsVideoInCar: userAllowsVideoInCar)
@@ -325,6 +339,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     /// Re-applies the playback configuration to every live row with the current playback state.
     private func refreshPlaybackConfigurations() {
+        if let carSupportsVideo = carSupportsVideoNow {
+            CarVideoDiagnostics.shared.recordSample(carSupportsVideo: carSupportsVideo)
+        }
         playableRows.removeAll { $0.item == nil }
         let policy = presentationPolicy
         let state = PlaybackController.shared.state
@@ -372,6 +389,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         case .pause:
             PlaybackController.shared.pause()
         case .resume:
+            noteVideoAttempt(channel)
             PlaybackController.shared.resume()
             if let interfaceController, !PlaybackController.shared.state.isFailed,
                interfaceController.topTemplate !== CPNowPlayingTemplate.shared {
@@ -383,10 +401,20 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func play(_ channel: Channel, queue: [Channel]) {
+        noteVideoAttempt(channel)
         PlaybackController.shared.play(channel, queue: queue, presentPlayer: false)
         guard let interfaceController else { return }
         if !PlaybackController.shared.state.isFailed, interfaceController.topTemplate !== CPNowPlayingTemplate.shared {
             interfaceController.pushTemplate(CPNowPlayingTemplate.shared, animated: true, completion: nil)
+        }
+    }
+
+    /// Diagnostics (Settings > "Araç ekranında video"): records that a row marked `.video` was played.
+    private func noteVideoAttempt(_ channel: Channel) {
+        let isXtream = AppModel.shared.record(forChannelID: channel.id)?.source.isXtream ?? false
+        guard let isAudioOnly = resolver.isAudioOnly(channel, isXtreamSource: isXtream) else { return }
+        if presentationPolicy.presentation(isAudioOnly: isAudioOnly) == .video {
+            CarVideoDiagnostics.shared.recordVideoPlay()
         }
     }
 

@@ -155,6 +155,36 @@
         }
       }
     },
+    "Araç ekranında video": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video on the car display"
+          }
+        }
+      }
+    },
+    "Araç ekranında video iOS 27 ister; bu sürümde video yalnız ses olarak çalar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video on the car display needs iOS 27; on this version video plays as audio only."
+          }
+        }
+      }
+    },
+    "Araç ekranında video yalnız bunu destekleyen araçlarda ve park halindeyken oynar; araç izin vermezse yalnız ses çalar. Durum satırları son CarPlay bağlantısından alınır.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video on the car display plays only in cars that support it and only while parked; if the car does not allow it, audio only. The status rows come from the last CarPlay connection."
+          }
+        }
+      }
+    },
     "Araç hareket halindeyken video gösterilmez, yalnız ses çalar. CarPlay'de kanallar sesli oynatılır.": {
       "localizations": {
         "en": {
@@ -171,6 +201,56 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hide video while the car is moving"
+          }
+        }
+      }
+    },
+    "Araç video bildiriyor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Car reports video"
+          }
+        }
+      }
+    },
+    "Araç video destekliyor ve ayar açık, ama son denemede görüntü araç ekranına gitmedi. Araç park halinde değilse ya da o an video izni vermediyse video yalnız ses olarak çalar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The car supports video and the setting is on, but on the last try the picture did not reach the car display. If the car was not parked or did not allow video at that moment, video plays as audio only."
+          }
+        }
+      }
+    },
+    "Araç video destekliyor ve ayar açık. Park halindeyken CarPlay'de bir video kanalı seçin.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The car supports video and the setting is on. While parked, pick a video channel in CarPlay."
+          }
+        }
+      }
+    },
+    "Araç video destekliyor, ayar kapalı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The car supports video, but the setting is off"
+          }
+        }
+      }
+    },
+    "Araç video desteği bildirmiyor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The car reports no video support"
           }
         }
       }
@@ -195,6 +275,16 @@
         }
       }
     },
+    "Ayar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setting"
+          }
+        }
+      }
+    },
     "Ayarlar": {
       "localizations": {
         "en": {
@@ -205,12 +295,22 @@
         }
       }
     },
-    "Açıksa, GPS hızı 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. Hız bilinmiyorsa video gösterilir. Araç ekranında video yalnız bunu destekleyen araçlarda ve park halindeyken oynar; araç izin vermezse yalnız ses çalar.": {
+    "Açık": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "When on, video on the phone is hidden once GPS speed passes 8 km/h and only audio continues; it returns below 3 km/h. If the speed is unknown, video is shown. Video on the car display plays only in vehicles that support it and only while parked; otherwise only audio plays."
+            "value": "On"
+          }
+        }
+      }
+    },
+    "Açıksa, GPS hızı 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. Hız bilinmiyorsa video gösterilir.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When on, video on the phone is hidden once GPS speed passes 8 km/h and only audio continues; it returns below 3 km/h. If the speed is unknown, video is shown."
           }
         }
       }
@@ -845,6 +945,16 @@
         }
       }
     },
+    "Evet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes"
+          }
+        }
+      }
+    },
     "Favori": {
       "localizations": {
         "en": {
@@ -1055,6 +1165,26 @@
         }
       }
     },
+    "Görüntü araç ekranına geçmedi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The picture did not reach the car display"
+          }
+        }
+      }
+    },
+    "Görüntü araç ekranına gitti": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Picture reached the car display"
+          }
+        }
+      }
+    },
     "Göstermek istediğiniz grupları açın. Arama gizli grupları da bulur.": {
       "localizations": {
         "en": {
@@ -1101,6 +1231,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Raw MPEG-TS (.ts) streams are not supported. Ask your provider for HLS (.m3u8) output."
+          }
+        }
+      }
+    },
+    "Hayır": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No"
+          }
+        }
+      }
+    },
+    "Hazır": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready"
+          }
+        }
+      }
+    },
+    "Henüz CarPlay bağlantısı görülmedi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No CarPlay connection seen yet"
           }
         }
       }
@@ -1271,6 +1431,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Channels"
+          }
+        }
+      }
+    },
+    "Kapalı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
           }
         }
       }
@@ -1775,6 +1945,36 @@
         }
       }
     },
+    "Son bağlanan araç Apple'ın \"araçta video\" özelliğini bildirmedi. Bu araçta ayar açık olsa da video yalnız ses olarak çalar; Apple'ın izin verdiği yoldan araç ekranına görüntü gönderilemez.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The last connected car did not report Apple's \"video in car\" feature. In this car video plays as audio only even with the setting on; Apple's approved path cannot send a picture to the car display."
+          }
+        }
+      }
+    },
+    "Son bağlantı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last connection"
+          }
+        }
+      }
+    },
+    "Son bağlantıda görüntü araç ekranına gitti.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the last connection the picture reached the car display."
+          }
+        }
+      }
+    },
     "Son izlenenler": {
       "localizations": {
         "en": {
@@ -2165,6 +2365,16 @@
         }
       }
     },
+    "Uygulamayı araçta CarPlay ekranından bir kez açın; sonuç burada görünür.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the app once on the CarPlay screen in the car; the result appears here."
+          }
+        }
+      }
+    },
     "Uyku zamanlayıcı": {
       "localizations": {
         "en": {
@@ -2201,6 +2411,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "No data is collected. Source addresses and passwords are stored only on this device."
+          }
+        }
+      }
+    },
+    "Video araç ekranında oynadı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video played on the car display"
+          }
+        }
+      }
+    },
+    "Video satırı oynatıldı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video row played"
           }
         }
       }
@@ -2315,6 +2545,16 @@
         }
       }
     },
+    "Yukarıdaki ayarı açın; araç park halindeyken video araç ekranında oynar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on the setting above; video then plays on the car display while parked."
+          }
+        }
+      }
+    },
     "Yönetmen": {
       "localizations": {
         "en": {
@@ -2341,6 +2581,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Turn off timer"
+          }
+        }
+      }
+    },
+    "iOS desteği": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS support"
+          }
+        }
+      }
+    },
+    "iOS sürümü eski": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS is too old"
           }
         }
       }

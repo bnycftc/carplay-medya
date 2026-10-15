@@ -1,3 +1,4 @@
+import CarMediaKit
 import CoreLocation
 import SwiftUI
 import UIKit
@@ -13,6 +14,7 @@ struct SettingsView: View {
     @AppStorage(SettingsKeys.onboardingCompleted) private var onboardingCompleted = false
     @Environment(\.openURL) private var openURL
     @ObservedObject private var catalog = CatalogModel.shared
+    @ObservedObject private var carVideo = CarVideoDiagnostics.shared
     @State private var confirmClearHistory = false
 
     var body: some View {
@@ -26,12 +28,13 @@ struct SettingsView: View {
                     if motionPolicyEnabled {
                         locationRow
                     }
-                    Toggle("Park halinde araç ekranında video", isOn: $carVideoEnabled)
                 } header: {
                     Text("Sürüş güvenliği")
                 } footer: {
-                    Text("Açıksa, GPS hızı 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. Hız bilinmiyorsa video gösterilir. Araç ekranında video yalnız bunu destekleyen araçlarda ve park halindeyken oynar; araç izin vermezse yalnız ses çalar.")
+                    Text("Açıksa, GPS hızı 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. Hız bilinmiyorsa video gösterilir.")
                 }
+
+                carVideoSection
 
                 Section {
                     Toggle("Kilit ekranında ve CarPlay'de kanal atlama", isOn: $channelSkipEnabled)
@@ -93,6 +96,40 @@ struct SettingsView: View {
             }
             .nowPlayingInset()
         }
+    }
+
+    /// Video on the car display: the setting plus what the last CarPlay session reported.
+    private var carVideoSection: some View {
+        let diagnosis = CarVideoDiagnosis(snapshot: carVideo.snapshot, settingOn: carVideoEnabled)
+        return Section {
+            Toggle("Park halinde araç ekranında video", isOn: $carVideoEnabled)
+            VStack(alignment: .leading, spacing: 4) {
+                Label(diagnosis.title, systemImage: diagnosis.symbol)
+                    .bold()
+                Text(diagnosis.message)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            if let snapshot = carVideo.snapshot {
+                LabeledContent("Son bağlantı") {
+                    Text(snapshot.connectedAt.formatted(date: .abbreviated, time: .shortened))
+                }
+                LabeledContent("iOS desteği") { yesNoText(snapshot.systemSupportsAPI) }
+                LabeledContent("Araç video bildiriyor") { yesNoText(snapshot.carSupportsVideo) }
+                LabeledContent("Ayar") { carVideoEnabled ? Text("Açık") : Text("Kapalı") }
+                LabeledContent("Video satırı oynatıldı") { yesNoText(snapshot.playedVideoItem) }
+                LabeledContent("Görüntü araç ekranına gitti") { yesNoText(snapshot.externalPlaybackSeen) }
+            }
+        } header: {
+            Text("Araç ekranında video")
+        } footer: {
+            Text("Araç ekranında video yalnız bunu destekleyen araçlarda ve park halindeyken oynar; araç izin vermezse yalnız ses çalar. Durum satırları son CarPlay bağlantısından alınır.")
+        }
+    }
+
+    private func yesNoText(_ value: Bool?) -> Text {
+        guard let value else { return Text("Bilinmiyor") }
+        return value ? Text("Evet") : Text("Hayır")
     }
 
     @ViewBuilder

@@ -28,6 +28,8 @@ enum SettingsKeys {
     static let onboardingCompleted = "onboardingCompleted"
     static let motionPolicyEnabled = "motionPolicyEnabled"
     static let carVideoEnabled = "carVideoEnabled"
+    /// Last CarPlay session's video facts (``CarVideoSnapshot`` as JSON; no secrets).
+    static let carVideoSnapshot = "carVideoSnapshot"
     static let channelSkipEnabled = "channelSkipEnabled"
     static let showSamples = "showSamples"
     static let autoplayNextEpisode = "autoplayNextEpisode"
