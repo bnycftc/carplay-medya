@@ -6,8 +6,11 @@
 	<key>com.apple.developer.carplay-audio</key>
 	<true/>
 	<!--
-	com.apple.developer.carplay-video is still pending with Apple. Automatic signing fails when an
-	entitlement is not enabled on the App ID, so it is re-added here only after Apple grants it.
+	com.apple.developer.carplay-video was granted by Apple on 2026-10-15 (Case 22408601) but is
+	deliberately NOT used: video apps are hidden in cars without video support, and categories
+	cannot be combined in one app (CarPlay Developer Guide, Oct 2026, p.4). The audio category also
+	covers "a mixture of audio and video" if the app supports AirPlay video (p.4-5). Keep the
+	"CarPlay Video" box unchecked on the App ID; testflight.yml asserts the signed entitlements are audio only.
 	-->
 	<!-- CarPlay must work while the phone is locked: files stay readable after the first unlock. -->
 	<key>com.apple.developer.default-data-protection</key>

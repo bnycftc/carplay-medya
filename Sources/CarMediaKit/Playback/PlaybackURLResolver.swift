@@ -81,6 +81,14 @@ public struct PlaybackURLResolver: Sendable {
         ))
     }
 
+    /// Whether the channel plays as audio only (same rule as ``resolve(_:isXtreamSource:)``), or `nil` if it cannot be played.
+    public func isAudioOnly(_ channel: Channel, isXtreamSource: Bool) -> Bool? {
+        switch resolve(channel, isXtreamSource: isXtreamSource) {
+        case .playable(let request): return request.isAudioOnly
+        case .unsupported: return nil
+        }
+    }
+
     /// `/live/{user}/{pass}/{id}.ts` (optionally below a path prefix).
     static func isXtreamLivePath(_ url: URL) -> Bool {
         let parts = url.path.split(separator: "/")

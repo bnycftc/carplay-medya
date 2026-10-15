@@ -18,7 +18,7 @@ settings:
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     DEVELOPMENT_TEAM: 26322AY3MH
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "0.6.1"
+    MARKETING_VERSION: "0.7.0"
     CURRENT_PROJECT_VERSION: "1"
     LOCALIZATION_PREFERS_STRING_CATALOGS: YES
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -49,7 +49,7 @@ targets:
         PRODUCT_NAME: CarMedya
         PRODUCT_BUNDLE_IDENTIFIER: com.bnycftc.carmedya
         INFOPLIST_FILE: Config/Info.plist
-        # carplay-audio is granted; carplay-video is still pending and stays out of the file until granted.
+        # Only carplay-audio is used. carplay-video (granted 2026-10-15) is deliberately left out: video apps are hidden in cars without video.
         # app.yml builds with CODE_SIGNING_ALLOWED=NO; testflight.yml signs automatically (cloud signing).
         CODE_SIGN_ENTITLEMENTS: CarMedya/CarMedya.entitlements
         TARGETED_DEVICE_FAMILY: "1"

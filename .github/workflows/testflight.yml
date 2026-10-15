@@ -14,6 +14,10 @@ name: TestFlight
 # Required repository secrets: ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY (raw .p8 text or base64 of it).
 # The API key needs the Admin role: cloud-managed distribution signing is refused for other roles.
 # Optional: DIST_CERT_P12_BASE64 (base64 of an Apple Distribution .p12), DIST_CERT_PASSWORD.
+#
+# Runner: "xcode-27" (GitHub-hosted, arm64) with DEVELOPER_DIR pinned to /Applications/Xcode_27.app (Xcode 27.0
+# GA on the image), because the iOS 27 CarPlay APIs need the iOS 27 SDK. App Store Connect rejects uploads built
+# with beta Xcode; the Toolchain step only checks the "Xcode 27.0" version line, not the build number.
 
 on:
   workflow_dispatch:
@@ -36,13 +40,19 @@ env:
 jobs:
   testflight:
     name: Archive and upload to TestFlight
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
 
       - name: Toolchain
-        run: xcodebuild -version
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          xcodebuild -version | head -n1 | grep -q '^Xcode 27\.0' \
+            || { echo "::error::Expected Xcode 27.0 at DEVELOPER_DIR"; exit 1; }
 
       - name: Install XcodeGen and xcbeautify
         run: brew install xcodegen xcbeautify
@@ -152,6 +162,18 @@ jobs:
           codesign --verify --strict --deep --verbose=4 "$app"
           codesign -d --verbose=2 "$app" 2>&1 | grep -m1 '^Authority=' | grep -qE '^Authority=(Apple|iPhone) Distribution: ' \
             || { echo "::error::CarMedya.app is not signed with a distribution certificate"; exit 1; }
+          # Only the CarPlay audio category is used (video apps are hidden in cars without video support).
+          # Signed entitlements are dumped to a plist so the checks below do not depend on the prints above.
+          codesign -d --entitlements - --xml "$app" 2>/dev/null > build/entitlements.plist || true
+          plutil -lint build/entitlements.plist \
+            || { echo "::error::Could not read the signed entitlements of CarMedya.app"; exit 1; }
+          audio="$(/usr/libexec/PlistBuddy -c 'Print :com.apple.developer.carplay-audio' build/entitlements.plist 2>/dev/null || true)"
+          [ "$audio" = "true" ] \
+            || { echo "::error::com.apple.developer.carplay-audio is not true in the signed app (got '${audio:-missing}')"; exit 1; }
+          if /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.carplay-video' build/entitlements.plist >/dev/null 2>&1; then
+            echo "::error::com.apple.developer.carplay-video must not be present (audio and video categories cannot be combined)"
+            exit 1
+          fi
 
       - name: Upload to App Store Connect
         env:
@@ -190,6 +212,12 @@ jobs:
             build/*.xcdistributionlogs
           if-no-files-found: ignore
           retention-days: 7
+
+      # Pin a Python with pyjwt/cryptography wheels; the xcode-27 image's default python3 may be newer than the wheel support.
+      - uses: actions/setup-python@v5
+        if: always()
+        with:
+          python-version: '3.13'
 
       - name: Revoke CI development certificates
         # Automatic signing creates an "Apple Development: Created via API" certificate on every fresh

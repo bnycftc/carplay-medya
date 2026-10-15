@@ -1,5 +1,7 @@
 # CarPlay Entitlement Başvurusu
 
+> **Not (2026-10-15):** İki yetki de verildi: Audio 2026-09-24, Video 2026-10-15 (Case 22408601). Yalnız **Audio** kullanılıyor. Neden: Apple CarPlay Developer Guide (Ekim 2026, s.4–5) — ses kategorisi ses ya da ses+video karışımını kapsar (video için AirPlay video şart), video uygulamaları videosuz araçlarda gizlenir, kategoriler tek uygulamada birleşmez; bny'nin Kia EV3'ü video desteklemiyor. App ID'de "CarPlay Video" kapalı. Aşağıdaki başvuru metinleri tarihsel kayıttır.
+
 Form: https://developer.apple.com/contact/request/carplay/
 Hesap: Bünyamin Çiftci · Team ID 26322AY3MH · Tarih: 2026-09-22
 

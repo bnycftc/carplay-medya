@@ -105,6 +105,16 @@
         }
       }
     },
+    "Adres yazın veya arayın": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter an address or search"
+          }
+        }
+      }
+    },
     "AirPlay": {
       "localizations": {
         "en": {
@@ -195,12 +205,12 @@
         }
       }
     },
-    "Açıksa, GPS hızı 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. Hız bilinmiyorsa video gösterilir. CarPlay ekranında bu sürümde yalnızca ses çalar.": {
+    "Açıksa, GPS hızı 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. Hız bilinmiyorsa video gösterilir. Araç ekranında video yalnız bunu destekleyen araçlarda ve park halindeyken oynar; araç izin vermezse yalnız ses çalar.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "When on, video on the phone is hidden once GPS speed passes 8 km/h and only audio continues; it returns below 3 km/h. If the speed is unknown, video is shown. On the CarPlay screen this version plays audio only."
+            "value": "When on, video on the phone is hidden once GPS speed passes 8 km/h and only audio continues; it returns below 3 km/h. If the speed is unknown, video is shown. Video on the car display plays only in vehicles that support it and only while parked; otherwise only audio plays."
           }
         }
       }
@@ -1005,6 +1015,16 @@
         }
       }
     },
+    "Git": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go"
+          }
+        }
+      }
+    },
     "Gizlilik politikası": {
       "localizations": {
         "en": {
@@ -1585,6 +1605,16 @@
         }
       }
     },
+    "Park halinde araç ekranında video": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video on the car display when parked"
+          }
+        }
+      }
+    },
     "Parola": {
       "localizations": {
         "en": {
@@ -1651,6 +1681,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No guide"
+          }
+        }
+      }
+    },
+    "Sayfalar telefonda Safari görünümünde açılır. CarPlay ekranında web sayfası gösterilmez.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pages open on the phone in a Safari view. Web pages are not shown on the CarPlay screen."
           }
         }
       }
@@ -1875,12 +1915,12 @@
         }
       }
     },
-    "Sürerken videoya bakmayın. CarPlay'de kanallar sesli oynatılır. İsterseniz Ayarlar'dan, araç hareket halindeyken telefonda videoyu gizleyen güvenlik seçeneğini açabilirsiniz.": {
+    "Sürerken videoya bakmayın. CarPlay'de kanallar sesli oynatılır; bunu destekleyen araçlarda video da park halindeyken araç ekranında oynar. İsterseniz Ayarlar'dan, araç hareket halindeyken telefonda videoyu gizleyen güvenlik seçeneğini açabilirsiniz.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Don't watch video while driving. In CarPlay, channels play as audio. You can turn on the safety option in Settings to hide video on the phone while the car is moving."
+            "value": "Don't watch video while driving. In CarPlay, channels play as audio; in vehicles that support it, video also plays on the car display while parked. You can turn on the safety option in Settings to hide video on the phone while the car is moving."
           }
         }
       }
@@ -1981,6 +2021,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show introduction again"
+          }
+        }
+      }
+    },
+    "Tarayıcı": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Browser"
           }
         }
       }

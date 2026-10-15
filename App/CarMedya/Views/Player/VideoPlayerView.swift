@@ -72,7 +72,7 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         }
 
         private func enteredBackground() {
-            guard !isPictureInPictureActive, let controller else { return }
+            guard !isPictureInPictureActive, !player.isExternalPlaybackActive, let controller else { return }
             controller.player = nil
             isDetachedForBackground = true
         }

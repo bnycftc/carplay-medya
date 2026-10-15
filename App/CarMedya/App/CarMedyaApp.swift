@@ -27,6 +27,7 @@ struct CarMedyaApp: App {
 enum SettingsKeys {
     static let onboardingCompleted = "onboardingCompleted"
     static let motionPolicyEnabled = "motionPolicyEnabled"
+    static let carVideoEnabled = "carVideoEnabled"
     static let channelSkipEnabled = "channelSkipEnabled"
     static let showSamples = "showSamples"
     static let autoplayNextEpisode = "autoplayNextEpisode"

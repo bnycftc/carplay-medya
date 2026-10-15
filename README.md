@@ -30,12 +30,13 @@ brew install xcodegen
 cd App && xcodegen generate
 xcodebuild -project CarMedya.xcodeproj -scheme CarMedya   -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```
-Mac olmayan ortamda iOS derlemesi GitHub Actions'ta (`.github/workflows/app.yml`, macos-15) yapılır.
+Mac olmayan ortamda iOS derlemesi GitHub Actions'ta (`.github/workflows/app.yml`, `xcode-27` runner'ı, Xcode 27.0 `DEVELOPER_DIR` ile) yapılır.
 
 - **Sekmeler:** Kütüphane (gruplar → kanallar, logo, EPG şimdi/sonraki), Favoriler, Kaynaklar (M3U adresi, Xtream hesabı + bağlantı testi, dosyadan içe aktarma), Ayarlar.
 - **Oynatıcı:** `AVPlayerViewController` (PiP, AirPlay video), `AVRoutePickerView`; araç hareket halindeyken video gizlenir, ses sürer.
-- **CarPlay (ses):** Favoriler / Kanallar / Son Oynatılan sekmeleri, `CPNowPlayingTemplate`. CarPlay video (iOS 27) v1.1'de.
-- **Entitlement:** `carplay-audio` verildi (2026-09-24). `carplay-video` hâlâ Apple'da beklemede; otomatik imzalama App ID'de açık olmayan entitlement'ta başarısız olduğu için verilene kadar `CarMedya.entitlements`'ta yok. `app.yml` imzasız derler.
+- **Tarayıcı (yalnız telefon):** Ana Sayfa sağ üst "Tarayıcı"; adres ya da arama `SFSafariViewController`'da açılır (`BrowserAddress` yalnız http(s) üretir). CarPlay'de web sayfası gösterilmez.
+- **CarPlay (ses uygulaması):** Favoriler / Kanallar / A–Z / Son Oynatılan sekmeleri, `CPNowPlayingTemplate`. iOS 27'de videoyu destekleyen araçlarda satırlar `CPPlaybackConfiguration` taşır; video AirPlay video olarak sistem tarafından sunulur (yalnız park halinde, kısıtı araç uygular).
+- **Entitlement:** yalnız `carplay-audio` (verildi 2026-09-24). `carplay-video` Apple tarafından 2026-10-15'te verildi ama bilerek kullanılmıyor: video uygulamaları videoyu desteklemeyen araçlarda gizlenir ve kategoriler tek uygulamada birleştirilemez (ayrıntı `docs/DURUM.md`). `app.yml` imzasız derler.
 
 ### TestFlight (`.github/workflows/testflight.yml`)
 Xcode'un bulut yönetimli otomatik imzalaması + App Store Connect API anahtarı kullanılır; depoda veya secret'larda sertifika/profil yok. `xcodebuild archive` (Release, `-allowProvisioningUpdates -authenticationKey*`) ardından `xcodebuild -exportArchive` `App/ExportOptions.plist` ile (`method: app-store-connect`, `destination: upload`) hem imzalar hem App Store Connect'e yükler. Build numarası `$GITHUB_RUN_NUMBER`, sürüm `App/project.yml`'deki `MARKETING_VERSION`.

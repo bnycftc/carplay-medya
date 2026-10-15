@@ -7,8 +7,9 @@ import UIKit
 
 /// The single player of the app, shared by the phone UI, lock screen and CarPlay.
 ///
-/// - Audio session: `.playback` / `.longFormAudio`, active **only while playing** so the car's own
-///   sources are not interrupted when nothing plays (plan §5, App Review 2.5.4).
+/// - Audio session: `.playback` with the long-form audio policy for radio and long-form video for video
+///   content (see `sessionPolicy`), active **only while playing** so the car's own sources are not
+///   interrupted when nothing plays (plan §5, App Review 2.5.4).
 /// - Errors are classified with ``UserFacingError`` and details redacted with the Xtream password.
 /// - Lock screen / CarPlay Now Playing goes through ``NowPlayingInfoPublisher`` (iOS 17–26 APIs).
 @MainActor
@@ -255,6 +256,15 @@ final class PlaybackController: ObservableObject {
             }
             .store(in: &observers)
 
+        // Diagnostics only: shows whether AirPlay video (e.g. on the car display) is taking over.
+        player.publisher(for: \.isExternalPlaybackActive)
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { active in
+                PlaybackController.shared.log.info("external playback active: \(active, privacy: .public)")
+            }
+            .store(in: &observers)
+
         timeObserver = player.addPeriodicTimeObserver(
             forInterval: CMTime(seconds: 1, preferredTimescale: 2),
             queue: .main
@@ -434,6 +444,11 @@ final class PlaybackController: ObservableObject {
     private func handleRouteChange(_ notification: Notification) {
         guard let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
               let reason = AVAudioSession.RouteChangeReason(rawValue: raw) else { return }
+        let previousOutputs = ((notification.userInfo?[AVAudioSessionRouteChangePreviousRouteKey]
+            as? AVAudioSessionRouteDescription)?.outputs ?? []).map(\.portType.rawValue).joined(separator: ",")
+        let currentOutputs = AVAudioSession.sharedInstance().currentRoute.outputs
+            .map(\.portType.rawValue).joined(separator: ",")
+        log.info("route change reason \(raw, privacy: .public): \(previousOutputs, privacy: .public) -> \(currentOutputs, privacy: .public)")
         // Headphones unplugged or CarPlay disconnected: pause instead of blasting the phone speaker.
         if reason == .oldDeviceUnavailable, state.isPlaying {
             pause()

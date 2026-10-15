@@ -6,6 +6,7 @@ struct SettingsView: View {
     @EnvironmentObject private var motion: MotionMonitor
     @EnvironmentObject private var playback: PlaybackController
     @AppStorage(SettingsKeys.motionPolicyEnabled) private var motionPolicyEnabled = false
+    @AppStorage(SettingsKeys.carVideoEnabled) private var carVideoEnabled = false
     @AppStorage(SettingsKeys.channelSkipEnabled) private var channelSkipEnabled = true
     @AppStorage(SettingsKeys.autoplayNextEpisode) private var autoplayNextEpisode = true
     @AppStorage(SettingsKeys.showSamples) private var showSamples = true
@@ -25,10 +26,11 @@ struct SettingsView: View {
                     if motionPolicyEnabled {
                         locationRow
                     }
+                    Toggle("Park halinde araç ekranında video", isOn: $carVideoEnabled)
                 } header: {
                     Text("Sürüş güvenliği")
                 } footer: {
-                    Text("Açıksa, GPS hızı 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. Hız bilinmiyorsa video gösterilir. CarPlay ekranında bu sürümde yalnızca ses çalar.")
+                    Text("Açıksa, GPS hızı 8 km/sa'i geçince telefonda video gizlenir ve yalnız ses devam eder; 3 km/sa'in altına inince video geri gelir. Hız bilinmiyorsa video gösterilir. Araç ekranında video yalnız bunu destekleyen araçlarda ve park halindeyken oynar; araç izin vermezse yalnız ses çalar.")
                 }
 
                 Section {

@@ -50,7 +50,7 @@
 					<string>Default Configuration</string>
 				</dict>
 			</array>
-			<!-- CarPlay audio (CP templates). Requires the carplay-audio entitlement. -->
+			<!-- CarPlay audio app (templates); video via AirPlay video in vehicles that support video in car. Requires the carplay-audio entitlement. -->
 			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
 			<array>
 				<dict>

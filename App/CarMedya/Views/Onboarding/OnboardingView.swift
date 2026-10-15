@@ -25,7 +25,7 @@ struct OnboardingView: View {
         Page(
             symbol: "car",
             title: "Güvenli sürüş",
-            text: "Sürerken videoya bakmayın. CarPlay'de kanallar sesli oynatılır. İsterseniz Ayarlar'dan, araç hareket halindeyken telefonda videoyu gizleyen güvenlik seçeneğini açabilirsiniz."
+            text: "Sürerken videoya bakmayın. CarPlay'de kanallar sesli oynatılır; bunu destekleyen araçlarda video da park halindeyken araç ekranında oynar. İsterseniz Ayarlar'dan, araç hareket halindeyken telefonda videoyu gizleyen güvenlik seçeneğini açabilirsiniz."
         ),
     ]
 

@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        UserDefaults.standard.register(defaults: [SettingsKeys.carVideoEnabled: false])
         // CarPlay can launch the app without the phone UI: load sources and register remote commands now.
         AppModel.shared.start()
         _ = PlaybackController.shared

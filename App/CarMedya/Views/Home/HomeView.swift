@@ -10,6 +10,7 @@ struct HomeView: View {
     @AppStorage(SettingsKeys.showSamples) private var showSamples = true
     @State private var query = ""
     @State private var addsSource = false
+    @State private var showsBrowser = false
 
     private var firstXtream: SourceRecord? { catalog.xtreamRecords.first }
     private var hasOwnContent: Bool { !model.records.isEmpty }
@@ -32,6 +33,13 @@ struct HomeView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
+                            showsBrowser = true
+                        } label: {
+                            Label("Tarayıcı", systemImage: "globe")
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
                             addsSource = true
                         } label: {
                             Label("Kaynak ekle", systemImage: "plus")
@@ -39,6 +47,7 @@ struct HomeView: View {
                     }
                 }
                 .sheet(isPresented: $addsSource) { QuickAddSourceView() }
+                .sheet(isPresented: $showsBrowser) { BrowserView() }
                 .nowPlayingInset()
         }
     }

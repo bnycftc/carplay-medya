@@ -2,7 +2,9 @@ name: App
 
 # iOS app build. There is no Mac in the main dev setup, so this workflow is where the iOS code is
 # compiled: it generates App/CarMedya.xcodeproj with XcodeGen and builds for the iOS Simulator
-# without code signing (CarPlay entitlements are requested from Apple, not granted yet).
+# without code signing. It runs on the GitHub-hosted "xcode-27" runner (Xcode 27.0, iOS 27 SDK) so the
+# iOS 27 CarPlay APIs compile; the app is built unsigned, and the CarPlay audio entitlement (granted) is
+# only applied when the TestFlight workflow signs the archive.
 
 on:
   push:
@@ -20,7 +22,10 @@ env:
 jobs:
   ios:
     name: iOS app (Simulator, unsigned)
-    runs-on: macos-15
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
 
@@ -28,6 +33,9 @@ jobs:
         run: |
           xcodebuild -version
           swift --version
+          xcrun --sdk iphonesimulator --show-sdk-version
+          xcodebuild -version | head -n1 | grep -q '^Xcode 27\.0' \
+            || { echo "::error::Expected Xcode 27.0 at DEVELOPER_DIR"; exit 1; }
 
       - name: Install XcodeGen and xcbeautify
         run: |
