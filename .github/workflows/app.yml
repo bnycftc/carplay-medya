@@ -230,3 +230,284 @@ jobs:
             build/ui-test.log
           if-no-files-found: ignore
           retention-days: 7
+
+  # EXPERIMENTAL, never blocks (continue-on-error). Tries to show CarMedya on a simulated CarPlay screen and
+  # records what the simulated car reports for CPSessionConfiguration.supportsVideoPlayback.
+  # Xcode 27 replaced Simulator.app with Device Hub, which has no CarPlay for simulators (Apple Developer
+  # Forums thread 834440). This job therefore tries `simctl io <udid> screenConfig --display=<id> power on`
+  # (undocumented; iOS 27 simulators still list a "CarPlay" screen in `simctl io enumerate`) and, only if a
+  # Simulator.app still ships, its I/O > External Displays > CarPlay menu through System Events.
+  # The app is built in Debug, ad-hoc signed so the carplay-audio entitlement is embedded, and launched with
+  # -carplaySmoke (DEBUG-only hook: App/CarMedya/CarPlay/CarPlaySmoke.swift). A simulator is not a car;
+  # the step summary says plainly what worked.
+  carplay-sim:
+    name: CarPlay simulator (experimental)
+    runs-on: xcode-27
+    timeout-minutes: 45
+    continue-on-error: true
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.app/Contents/Developer
+      OUT: build/carplay-sim
+      BUNDLE_ID: com.bnycftc.carmedya
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tools available (simctl io, Simulator.app)
+        run: |
+          mkdir -p "$OUT"
+          xcodebuild -version
+          ls -la "$DEVELOPER_DIR/Applications" || true
+          xcrun simctl help io > "$OUT/simctl-help-io.txt" 2>&1 || true
+          cat "$OUT/simctl-help-io.txt"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: App
+        run: xcodegen generate
+
+      - name: Pick and boot an iPhone simulator (iOS 27.0)
+        id: sim
+        run: |
+          xcrun simctl list devices available -j > build-sims.json
+          UDID=$(python3 - <<'PY'
+          import json
+          devices = json.load(open("build-sims.json"))["devices"]
+          candidates = []
+          for runtime, items in devices.items():
+              if "iOS-27-0" not in runtime:
+                  continue
+              for d in items:
+                  if d.get("isAvailable", True) and d["name"].startswith("iPhone"):
+                      candidates.append(d)
+          # Same choice as the ui-smoke job: the plain "iPhone 17", otherwise the first iPhone on iOS 27.0.
+          candidates.sort(key=lambda d: (d["name"] != "iPhone 17", d["name"]))
+          print(candidates[0]["udid"] if candidates else "")
+          PY
+          )
+          if [ -z "$UDID" ]; then
+            echo "::error::No available iPhone simulator with the iOS 27.0 runtime"
+            exit 1
+          fi
+          echo "Using simulator $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Build (Debug, ad-hoc signed so the entitlements are embedded)
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          # CODE_SIGNING_ALLOWED=NO (ios / ui-smoke jobs) drops the entitlements, and the Simulator does not show
+          # a CarPlay app without com.apple.developer.carplay-audio. Ad-hoc ("-") needs no team or profile.
+          STATUS=0
+          xcodebuild build \
+            -project App/CarMedya.xcodeproj \
+            -scheme CarMedya \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -configuration Debug \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY=- \
+            DEVELOPMENT_TEAM= \
+            PROVISIONING_PROFILE_SPECIFIER= \
+            CODE_SIGNING_REQUIRED=YES \
+            CODE_SIGNING_ALLOWED=YES \
+            > "$OUT/xcodebuild.log" 2>&1 || STATUS=$?
+          grep -E "error:|entitlement|BUILD (SUCCEEDED|FAILED)" "$OUT/xcodebuild.log" | tail -n 60 || true
+          exit $STATUS
+
+      - name: Entitlements in the built app
+        id: ent
+        run: |
+          APP=build/DerivedData/Build/Products/Debug-iphonesimulator/CarMedya.app
+          {
+            echo "== codesign -d --entitlements - (signature)"
+            codesign -d --entitlements - "$APP" 2>&1 || true
+            echo ""
+            echo "== __TEXT,__entitlements section of the executable (Simulator entitlements)"
+            launchctl plist __TEXT,__entitlements "$APP/CarMedya" 2>&1 || true
+          } | tee "$OUT/entitlements.txt"
+          if grep -q "com.apple.developer.carplay-audio" "$OUT/entitlements.txt"; then
+            echo "carplay=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::carplay-audio entitlement not found in the built app"
+            echo "carplay=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install and launch with -carplaySmoke
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          xcrun simctl install "$UDID" build/DerivedData/Build/Products/Debug-iphonesimulator/CarMedya.app
+          # The hook (-carplaySmoke) sets onboardingCompleted and carVideoEnabled as real Bools in the app's own
+          # defaults; passing them as launch arguments would shadow those with the String "YES".
+          # It then starts the first video sample on the phone after 3 s, so the app is the Now Playing app
+          # when the CarPlay display appears (like getting into the car while something plays).
+          xcrun simctl launch "$UDID" "$BUNDLE_ID" -carplaySmoke -showSamples YES \
+            -AppleLanguages "(tr)" -AppleLocale tr_TR
+          sleep 15
+          xcrun simctl io "$UDID" screenshot --type=png "$OUT/01-phone-before-carplay.png" || true
+
+      - name: Open the CarPlay display
+        id: carplay
+        if: always() && steps.sim.outcome == 'success'
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          LOG="$OUT/carplay-open.txt"
+          : > "$LOG"
+          xcrun simctl io "$UDID" enumerate > "$OUT/displays-before.txt" 2>&1 || echo "simctl io enumerate failed" | tee -a "$LOG"
+          cat "$OUT/displays-before.txt"
+          # The CarPlay screen's id from `simctl io enumerate` (block that mentions CarPlay), else 3
+          # (Xcode 27.1 lists LCD=1, TVOut=2, Wireless/CarPlay=3, Resizable=4: expo/expo-device-hub#269).
+          ID=$(python3 - "$OUT/displays-before.txt" <<'PY'
+          import re, sys
+          text = open(sys.argv[1], errors="replace").read()
+          for block in re.split(r"\n\s*\n|\n(?=\S)", text):
+              if "carplay" in block.lower():
+                  m = re.search(r"(?im)^\s*(?:display\s*|port\s*|screen\s*)?id\s*[:=]\s*(\d+)", block)
+                  if m:
+                      print(m.group(1))
+                      break
+          PY
+          )
+          if [ -n "$ID" ]; then
+            echo "CarPlay display id from enumerate: $ID" | tee -a "$LOG"
+          else
+            ID=3
+            echo "CarPlay display id not parsed from enumerate; trying 3" | tee -a "$LOG"
+          fi
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+
+          # Method A: simctl screenConfig (Steve Troughton-Smith, Sept 2026: powers on external displays in Xcode 27).
+          echo "== A: simctl io screenConfig --display=$ID power on" | tee -a "$LOG"
+          if xcrun simctl io "$UDID" screenConfig --display="$ID" power on >> "$LOG" 2>&1; then
+            echo "A: command succeeded" | tee -a "$LOG"
+          else
+            echo "A: command failed" | tee -a "$LOG"
+          fi
+
+          # Method B: Simulator.app menu I/O > External Displays > CarPlay. bash/osascript have Accessibility and
+          # AppleEvents to System Events on hosted runners (runner-images configure-tccdb-macos.sh).
+          SIMAPP="$DEVELOPER_DIR/Applications/Simulator.app"
+          if [ -d "$SIMAPP" ]; then
+            echo "== B: Simulator.app found; clicking I/O > External Displays > CarPlay" | tee -a "$LOG"
+            defaults write com.apple.iphonesimulator CarPlay -bool YES
+            open -a "$SIMAPP" --args -CurrentDeviceUDID "$UDID"
+            sleep 20
+            if osascript >> "$LOG" 2>&1 <<'OSA'
+          tell application "System Events"
+            tell process "Simulator"
+              set frontmost to true
+              delay 1
+              set ioMenu to menu 1 of menu bar item "I/O" of menu bar 1
+              log (name of every menu item of ioMenu)
+              click menu item "CarPlay" of menu 1 of menu item "External Displays" of ioMenu
+            end tell
+          end tell
+          OSA
+            then
+              echo "B: menu click returned OK" | tee -a "$LOG"
+            else
+              echo "B: menu click failed" | tee -a "$LOG"
+            fi
+          else
+            echo "== B: skipped (no Simulator.app in this Xcode; Device Hub has no CarPlay for simulators)" | tee -a "$LOG"
+          fi
+
+          # Give CarPlay time to come up and (maybe) connect CarMedya's CarPlay scene.
+          sleep 30
+          xcrun simctl io "$UDID" enumerate > "$OUT/displays-after.txt" 2>&1 || true
+          cat "$OUT/displays-after.txt"
+          cat "$LOG"
+
+      - name: Screenshots
+        if: always()
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+          ID: ${{ steps.carplay.outputs.id }}
+        run: |
+          xcrun simctl io "$UDID" screenshot --type=png "$OUT/02-phone.png" || true
+          # CarPlay display: by id, then the older "external" alias.
+          xcrun simctl io "$UDID" screenshot --type=png --display="${ID:-3}" "$OUT/03-carplay.png" \
+            || xcrun simctl io "$UDID" screenshot --type=png --display=external "$OUT/03-carplay.png" \
+            || echo "No CarPlay display screenshot"
+          screencapture -x "$OUT/04-desktop.png" || echo "screencapture failed"
+          ls -la "$OUT"
+
+      - name: Logs and diagnostics snapshot
+        if: always()
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          xcrun simctl spawn "$UDID" log show --last 10m --info --style compact \
+            --predicate 'subsystem == "com.bnycftc.carmedya"' > "$OUT/app-log.txt" 2>&1 || true
+          xcrun simctl spawn "$UDID" log show --last 10m --style compact \
+            --predicate 'process CONTAINS[c] "carplay" OR subsystem CONTAINS[c] "carplay"' 2>&1 \
+            | tail -n 3000 > "$OUT/system-carplay-log.txt" || true
+          # Stop the app so its preferences are flushed, then decode the JSON snapshot from its data container.
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" || true
+          sleep 2
+          DATA=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data 2>/dev/null || true)
+          python3 - "$DATA/Library/Preferences/$BUNDLE_ID.plist" > "$OUT/carVideoSnapshot.json" 2>&1 <<'PY' || true
+          import json, plistlib, sys
+          try:
+              prefs = plistlib.load(open(sys.argv[1], "rb"))
+          except Exception as error:
+              print("no app preferences:", error)
+              raise SystemExit
+          raw = prefs.get("carVideoSnapshot")
+          print(json.dumps(json.loads(raw), indent=2) if raw else "carVideoSnapshot not set (no CarPlay connect recorded)")
+          PY
+          cat "$OUT/app-log.txt"
+          cat "$OUT/carVideoSnapshot.json"
+
+      - name: Job summary (what was and was not achieved)
+        if: always()
+        env:
+          ENT: ${{ steps.ent.outputs.carplay }}
+        run: |
+          size() { if [ -s "$1" ]; then echo "$(wc -c < "$1" | tr -d ' ') bytes"; else echo "none"; fi; }
+          LOG="$OUT/app-log.txt"
+          CONNECTED=no
+          grep -q "carplay-smoke.*didConnect" "$LOG" 2>/dev/null && CONNECTED=yes
+          # The runner shell uses -e: a grep without a match must not end the step.
+          FACTS=$(grep -o "facts: .*" "$LOG" 2>/dev/null | tail -n 1 || true)
+          SUPPORTS=$(echo "$FACTS" | grep -o "supportsVideoPlayback=[a-z]*" | cut -d= -f2 || true)
+          PHONE=$(grep -o "playback \[phone.*" "$LOG" 2>/dev/null | tail -n 1 || true)
+          CAR=$(grep -o "playback \[carplay.*" "$LOG" 2>/dev/null | tail -n 1 || true)
+          {
+            echo "### CarPlay simulator (experimental, never blocks)"
+            echo ""
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| carplay-audio entitlement embedded | ${ENT:-unknown} |"
+            echo "| CarPlay display screenshot (03-carplay.png) | $(size "$OUT/03-carplay.png"); open it, a black image means nothing was drawn |"
+            echo "| Desktop screenshot (04-desktop.png) | $(size "$OUT/04-desktop.png") |"
+            echo "| CarMedya CarPlay scene connected (didConnect) | $CONNECTED |"
+            echo "| supportsVideoPlayback from the simulated car | ${SUPPORTS:-not reported (scene did not connect)} |"
+            echo ""
+            echo "How the CarPlay display was opened:"
+            echo '```'
+            cat "$OUT/carplay-open.txt" 2>/dev/null || echo "(step did not run)"
+            echo '```'
+            echo "Last facts: \`${FACTS:-none}\`"
+            echo ""
+            echo "Phone playback: \`${PHONE:-none}\`"
+            echo ""
+            echo "CarPlay playback: \`${CAR:-none}\`"
+            echo ""
+            echo "A simulator is not a car: it cannot show what a real head unit reports for video. Xcode 27 officially"
+            echo "supports CarPlay only with a USB-connected iPhone (Device Hub or the CarPlay Simulator app)."
+            echo "Artifact: carplay-sim."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: carplay-sim
+          path: build/carplay-sim
+          if-no-files-found: warn
+          retention-days: 7
