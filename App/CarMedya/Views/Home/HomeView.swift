@@ -37,6 +37,7 @@ struct HomeView: View {
                         } label: {
                             Label("Tarayıcı", systemImage: "globe")
                         }
+                        .accessibilityIdentifier("home.browser")
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {

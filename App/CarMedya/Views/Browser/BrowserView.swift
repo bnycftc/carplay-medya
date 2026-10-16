@@ -23,6 +23,7 @@ struct BrowserView: View {
                             .autocorrectionDisabled()
                             .submitLabel(.go)
                             .onSubmit { open() }
+                            .accessibilityIdentifier("browser.address")
                         Button("Git") { open() }
                             .buttonStyle(.borderless)
                             .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

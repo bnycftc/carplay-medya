@@ -59,4 +59,21 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: YES
     scheme:
-      testTargets: []
+      # UI smoke tests (app.yml "ui-smoke" job): launch the app in the iOS Simulator and screenshot it.
+      testTargets:
+        - CarMedyaUITests
+
+  CarMedyaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CarMedyaUITests
+    dependencies:
+      - target: CarMedya
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bnycftc.carmedya.uitests
+        TEST_TARGET_NAME: CarMedya
+        GENERATE_INFOPLIST_FILE: YES
+        TARGETED_DEVICE_FAMILY: "1"

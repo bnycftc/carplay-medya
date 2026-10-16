@@ -76,3 +76,151 @@ jobs:
           name: xcodebuild-log
           path: build/xcodebuild.log
           if-no-files-found: ignore
+
+  # UI smoke test: launches the real app in the iOS 27 Simulator (XCUITest), asserts the 0.7.1 screens
+  # (Home "Tarayıcı" button, browser sheet, Settings > "Araç ekranında video") and keeps screenshots.
+  # The CarPlay window cannot be opened headlessly (Simulator menu only), so CarPlay is not covered here.
+  ui-smoke:
+    name: UI smoke (Simulator launch + screenshots)
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: App
+        run: xcodegen generate
+
+      - name: Pick an iPhone simulator (iOS 27.0)
+        id: sim
+        run: |
+          xcrun simctl list devices available -j > build-sims.json
+          UDID=$(python3 - <<'PY'
+          import json
+          devices = json.load(open("build-sims.json"))["devices"]
+          candidates = []
+          for runtime, items in devices.items():
+              if "iOS-27-0" not in runtime:
+                  continue
+              for d in items:
+                  if d.get("isAvailable", True) and d["name"].startswith("iPhone"):
+                      candidates.append(d)
+          # Prefer the plain "iPhone 17"; otherwise the first iPhone on the iOS 27.0 runtime.
+          candidates.sort(key=lambda d: (d["name"] != "iPhone 17", d["name"]))
+          print(candidates[0]["udid"] if candidates else "")
+          PY
+          )
+          if [ -z "$UDID" ]; then
+            echo "::error::No available iPhone simulator with the iOS 27.0 runtime"
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Using simulator $UDID"
+          xcrun simctl list devices available | grep "$UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Build for testing
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          set -o pipefail
+          mkdir -p build
+          # Unsigned, as in the "ios" job: Simulator apps and UI test runners run without a signature.
+          xcodebuild build-for-testing \
+            -project App/CarMedya.xcodeproj \
+            -scheme CarMedya \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build/ui-build.log
+
+      - name: Run UI smoke tests
+        id: uitest
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project App/CarMedya.xcodeproj \
+            -scheme CarMedya \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build/DerivedData \
+            -only-testing:CarMedyaUITests \
+            -parallel-testing-enabled NO \
+            -resultBundlePath build/ui.xcresult \
+            2>&1 | tee build/ui-test.log
+
+      - name: Job summary (what this job covers)
+        if: always()
+        env:
+          OUTCOME: ${{ steps.uitest.outcome }}
+        run: |
+          {
+            echo "### UI smoke: ${OUTCOME:-not run}"
+            echo ""
+            echo "Checked in the iOS 27.0 Simulator (phone UI only): Ana Sayfa 'Tarayıcı' button, browser sheet,"
+            echo "Ayarlar > 'Araç ekranında video' (toggle + diagnosis). Screenshots: artifact 'ui-smoke-screenshots'."
+            echo ""
+            echo "**Not covered:** the CarPlay screen. A CarPlay window cannot be opened in a headless CI Simulator;"
+            echo "check it by hand on a Mac (Simulator > I/O > External Displays > CarPlay) or in the car."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Export screenshots
+        if: always()
+        run: |
+          if [ ! -d build/ui.xcresult ]; then echo "No result bundle"; exit 0; fi
+          mkdir -p build/ui-shots
+          if xcrun xcresulttool export attachments --path build/ui.xcresult --output-path build/ui-shots; then
+            # Give each file its attachment name (01-home, 02-browser, ...) using the export manifest.
+            python3 - <<'PY'
+          import json, os, shutil
+          root = "build/ui-shots"
+          path = os.path.join(root, "manifest.json")
+          if not os.path.exists(path):
+              raise SystemExit(0)
+          def walk(node):
+              if isinstance(node, dict):
+                  exported = node.get("exportedFileName")
+                  name = node.get("suggestedHumanReadableName")
+                  if exported and name and os.path.exists(os.path.join(root, exported)):
+                      os.makedirs(os.path.join(root, "named"), exist_ok=True)
+                      shutil.copy(os.path.join(root, exported), os.path.join(root, "named", name))
+                  for value in node.values():
+                      walk(value)
+              elif isinstance(node, list):
+                  for value in node:
+                      walk(value)
+          walk(json.load(open(path)))
+          PY
+            ls -la build/ui-shots build/ui-shots/named 2>/dev/null || true
+          else
+            echo "::warning::xcresulttool export attachments failed; the xcresult bundle is uploaded instead"
+            xcrun xcresulttool help export attachments || true
+          fi
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-smoke-screenshots
+          path: build/ui-shots
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload xcresult and logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-smoke-xcresult
+          path: |
+            build/ui.xcresult
+            build/ui-build.log
+            build/ui-test.log
+          if-no-files-found: ignore
+          retention-days: 7

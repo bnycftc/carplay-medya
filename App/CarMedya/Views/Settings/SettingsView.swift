@@ -103,9 +103,11 @@ struct SettingsView: View {
         let diagnosis = CarVideoDiagnosis(snapshot: carVideo.snapshot, settingOn: carVideoEnabled)
         return Section {
             Toggle("Park halinde araç ekranında video", isOn: $carVideoEnabled)
+                .accessibilityIdentifier("settings.carVideo.toggle")
             VStack(alignment: .leading, spacing: 4) {
                 Label(diagnosis.title, systemImage: diagnosis.symbol)
                     .bold()
+                    .accessibilityIdentifier("settings.carVideo.diagnosis")
                 Text(diagnosis.message)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
