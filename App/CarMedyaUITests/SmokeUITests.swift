@@ -88,12 +88,11 @@ final class SmokeUITests: XCTestCase {
         XCTAssertEqual(toggle.label, "Park halinde araç ekranında video")
         XCTAssertEqual(toggle.value as? String, "0", "Araç ekranında video varsayılan olarak kapalı olmalı")
 
-        let diagnosis = app.descendants(matching: .any)["settings.carVideo.diagnosis"].firstMatch
-        XCTAssertTrue(diagnosis.waitForExistence(timeout: timeout), "Tanı satırı (settings.carVideo.diagnosis) yok")
-        XCTAssertTrue(
-            diagnosis.label.contains("Henüz CarPlay bağlantısı görülmedi"),
-            "Tanı başlığı beklenen gibi değil: \(diagnosis.label)"
-        )
+        // The identifier sits on the Label, whose first accessibility element is the symbol; match the title text.
+        let diagnosis = app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS %@", "Henüz CarPlay bağlantısı görülmedi"))
+            .firstMatch
+        XCTAssertTrue(diagnosis.waitForExistence(timeout: timeout), "Tanı başlığı 'Henüz CarPlay bağlantısı görülmedi' yok")
         let header = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label ==[c] %@", "Araç ekranında video"))
             .firstMatch

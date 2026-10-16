@@ -179,7 +179,7 @@ jobs:
           if xcrun xcresulttool export attachments --path build/ui.xcresult --output-path build/ui-shots; then
             # Give each file its attachment name (01-home, 02-browser, ...) using the export manifest.
             python3 - <<'PY'
-          import json, os, shutil
+          import json, os, re, shutil
           root = "build/ui-shots"
           path = os.path.join(root, "manifest.json")
           if not os.path.exists(path):
@@ -188,9 +188,15 @@ jobs:
               if isinstance(node, dict):
                   exported = node.get("exportedFileName")
                   name = node.get("suggestedHumanReadableName")
-                  if exported and name and os.path.exists(os.path.join(root, exported)):
+                  ext = os.path.splitext(exported or "")[1].lower()
+                  # Images only, with artifact-safe names (XCTest debug descriptions contain quotes).
+                  if exported and name and ext in (".png", ".jpg", ".jpeg", ".heic") \
+                          and os.path.exists(os.path.join(root, exported)):
+                      safe = re.sub(r"[^A-Za-z0-9._-]+", "_", name)
+                      if not safe.lower().endswith(ext):
+                          safe += ext
                       os.makedirs(os.path.join(root, "named"), exist_ok=True)
-                      shutil.copy(os.path.join(root, exported), os.path.join(root, "named", name))
+                      shutil.copy(os.path.join(root, exported), os.path.join(root, "named", safe))
                   for value in node.values():
                       walk(value)
               elif isinstance(node, list):
@@ -209,7 +215,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ui-smoke-screenshots
-          path: build/ui-shots
+          path: build/ui-shots/named
           if-no-files-found: warn
           retention-days: 7
 
