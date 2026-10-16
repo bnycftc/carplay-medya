@@ -363,20 +363,22 @@ jobs:
           # (Xcode 27.1 lists LCD=1, TVOut=2, Wireless/CarPlay=3, Resizable=4: expo/expo-device-hub#269).
           ID=$(python3 - "$OUT/displays-before.txt" <<'PY'
           import re, sys
-          text = open(sys.argv[1], errors="replace").read()
-          for block in re.split(r"\n\s*\n|\n(?=\S)", text):
-              if "carplay" in block.lower():
-                  m = re.search(r"(?im)^\s*(?:display\s*|port\s*|screen\s*)?id\s*[:=]\s*(\d+)", block)
-                  if m:
-                      print(m.group(1))
-                      break
+          # Screens are listed as "(3) Wireless:" followed by "Screen Type: CarPlay" a few lines later.
+          current = None
+          for line in open(sys.argv[1], errors="replace"):
+              m = re.match(r"\s*\((\d+)\)\s+\S.*:\s*$", line)
+              if m:
+                  current = m.group(1)
+              elif current and re.match(r"\s*Screen Type:\s*CarPlay\s*$", line, re.I):
+                  print(current)
+                  break
           PY
           )
           if [ -n "$ID" ]; then
             echo "CarPlay display id from enumerate: $ID" | tee -a "$LOG"
           else
-            ID=3
-            echo "CarPlay display id not parsed from enumerate; trying 3" | tee -a "$LOG"
+            ID=wireless0
+            echo "CarPlay display id not parsed from enumerate; trying device name wireless0" | tee -a "$LOG"
           fi
           echo "id=$ID" >> "$GITHUB_OUTPUT"
 
@@ -430,8 +432,8 @@ jobs:
         run: |
           xcrun simctl io "$UDID" screenshot --type=png "$OUT/02-phone.png" || true
           # CarPlay display: by id, then the older "external" alias.
-          xcrun simctl io "$UDID" screenshot --type=png --display="${ID:-3}" "$OUT/03-carplay.png" \
-            || xcrun simctl io "$UDID" screenshot --type=png --display=external "$OUT/03-carplay.png" \
+          xcrun simctl io "$UDID" screenshot --type=png --display="${ID:-wireless0}" "$OUT/03-carplay.png" \
+            || xcrun simctl io "$UDID" screenshot --type=png --display=wireless0 "$OUT/03-carplay.png" \
             || echo "No CarPlay display screenshot"
           screencapture -x "$OUT/04-desktop.png" || echo "screencapture failed"
           ls -la "$OUT"
