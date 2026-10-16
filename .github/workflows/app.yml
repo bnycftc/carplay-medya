@@ -598,8 +598,9 @@ jobs:
       # Optional click inside the CarPlay window, in screen points from the window's top-left corner (title bar
       # included). Both empty = no click. Pick the point from carplay-window-2.png / windows.txt of a previous
       # run (if windows.txt reports a Retina display, image pixels are 2x points).
-      CARPLAY_TAP_X: ""
-      CARPLAY_TAP_Y: ""
+      # CarMedya icon in carplay-window-2.png of run 38875356061 (window 454x318 points, 1x display).
+      CARPLAY_TAP_X: "127"
+      CARPLAY_TAP_Y: "205"
     steps:
       - name: Toolchain (Xcode 26.x, Simulator.app, runtimes)
         run: |
@@ -848,7 +849,13 @@ jobs:
           export TAP_PX=$(( $1 + CARPLAY_TAP_X ))
           export TAP_PY=$(( $2 + CARPLAY_TAP_Y ))
           echo "tap: window at $1,$2 size $3x$4, offset $CARPLAY_TAP_X,$CARPLAY_TAP_Y -> screen point $TAP_PX,$TAP_PY" | tee "$TAP"
-          if osascript >> "$TAP" 2>&1 <<'OSA'
+          # A real mouse click (CGEvent) is what Simulator turns into a touch; System Events "click at" is the fallback.
+          brew install cliclick >/dev/null 2>&1 || true
+          osascript -e 'tell application "System Events" to tell process "Simulator" to set frontmost to true' >> "$TAP" 2>&1 || true
+          sleep 1
+          if command -v cliclick >/dev/null 2>&1 && cliclick "c:$TAP_PX,$TAP_PY" >> "$TAP" 2>&1; then
+            echo "tap: cliclick returned OK" | tee -a "$TAP"
+          elif osascript >> "$TAP" 2>&1 <<'OSA'
           set px to (system attribute "TAP_PX") as integer
           set py to (system attribute "TAP_PY") as integer
           tell application "System Events"
@@ -864,8 +871,11 @@ jobs:
           else
             echo "tap: click failed" | tee -a "$TAP"
           fi
-          sleep 20
+          # 3: CarMedya's CarPlay lists (the smoke hook waits 3 s after didConnect); 4: after it plays a sample.
+          sleep 2
           snap 3
+          sleep 20
+          snap 4
 
       - name: Logs and diagnostics snapshot
         if: always()
