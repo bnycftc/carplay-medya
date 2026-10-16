@@ -91,9 +91,6 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             try? await Task.sleep(for: .seconds(2))
             self?.refreshPlaybackConfigurations()
         }
-        #if DEBUG
-        runSmokeIfRequested()
-        #endif
     }
 
     func templateApplicationScene(
@@ -443,62 +440,3 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
     }
 }
-
-#if DEBUG
-// CI "carplay-sim" job only (see CarPlaySmoke.swift): no-op unless launched with -carplaySmoke.
-extension CarPlaySceneDelegate {
-    /// Logs what the (simulated) car reports, then plays the first video sample through the row-tap path.
-    private func runSmokeIfRequested() {
-        guard CarPlaySmoke.isEnabled else { return }
-        CarPlaySmoke.note("didConnect")
-        Task { [weak self] in
-            // After the 2 s supportsVideoPlayback re-read in didConnect.
-            try? await Task.sleep(for: .seconds(3))
-            guard let self else { return }
-            self.logSmokeFacts()
-            self.playSmokeSample()
-            try? await Task.sleep(for: .seconds(8))
-            CarPlaySmoke.logPlayback(stage: "carplay +11s")
-            self.logSmokeFacts()
-        }
-    }
-
-    private func logSmokeFacts() {
-        let policy = presentationPolicy
-        let rows = playableRows.filter { $0.item != nil }.map(\.channel)
-        let videoRows = rows.filter { channel in
-            guard policy.videoAvailable else { return false }
-            let isXtream = AppModel.shared.record(forChannelID: channel.id)?.source.isXtream ?? false
-            guard let isAudioOnly = resolver.isAudioOnly(channel, isXtreamSource: isXtream) else { return false }
-            return policy.presentation(isAudioOnly: isAudioOnly) == .video
-        }
-        let supports = carSupportsVideoNow.map { String($0) } ?? "nil"
-        CarPlaySmoke.note(
-            "facts: iOS=\(ProcessInfo.processInfo.operatingSystemVersion.majorVersion) "
-                + "sessionConfig=\(sessionConfig != nil) supportsVideoPlayback=\(supports) "
-                + "carVideoEnabled=\(policy.userAllowsVideoInCar) videoAvailable=\(policy.videoAvailable) "
-                + "rows=\(rows.count) videoRows=\(videoRows.count)"
-        )
-    }
-
-    /// Samples are not in the CarPlay lists (sources only), so the sample goes straight to `select`,
-    /// the method a CarPlay row tap calls.
-    private func playSmokeSample() {
-        guard let sample = CarPlaySmoke.firstVideoSample else {
-            CarPlaySmoke.note("carplay: no video sample")
-            return
-        }
-        let state = PlaybackController.shared.state
-        if state.channel?.id == sample.channel.id, state.isPlaying || state.phase == .loading {
-            // Already started on the phone; a row tap on the current item could mean "pause", so only show Now Playing.
-            if let interfaceController, interfaceController.topTemplate !== CPNowPlayingTemplate.shared {
-                interfaceController.pushTemplate(CPNowPlayingTemplate.shared, animated: true, completion: nil)
-            }
-            CarPlaySmoke.note("carplay: sample already playing from the phone; pushed Now Playing")
-        } else {
-            select(sample.channel, queue: sample.queue)
-            CarPlaySmoke.note("carplay: selected \(CarPlaySmoke.label(sample.channel)) via the row-tap path")
-        }
-    }
-}
-#endif

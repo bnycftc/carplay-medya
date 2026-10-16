@@ -10,10 +10,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // CarPlay can launch the app without the phone UI: load sources and register remote commands now.
         AppModel.shared.start()
         _ = PlaybackController.shared
-        #if DEBUG
-        // CI "carplay-sim" job only: no-op unless launched with -carplaySmoke.
-        CarPlaySmoke.startPhoneSide()
-        #endif
         return true
     }
 
